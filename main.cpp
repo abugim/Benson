@@ -16,16 +16,24 @@ int main(int argc, char const *argv[])
 	pthread_create(&controle, &attr_controle, controle_t, NULL);
 	// Fim inicialização da thread de controle
 
+	while (true) {
+		// comunicar com o cliente
+	}
+
 	return 0;
 }
 
-void *controle_t(void *param){
-	/* Exemplos de comunicação Quanser
+void *controle_t(void *param)
+{
 	Quanser* q = new Quanser("10.13.97.69", 20072);
 
-	q->writeDA(4,1);
+	while(true)
+	{
+		double read = 0;
+		read = q->readAD(4);
 
-	double read = 0;
-	read = q->readAD(4);
-	*/	
+		// Calculo do controle
+
+		q->writeDA(4,1);
+	}
 }
