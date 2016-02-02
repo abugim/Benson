@@ -22,8 +22,7 @@ private:
 	double *nivel_dois;
 
 	double *sinal_controle;
-	double *referencia;
-
+	double *controle;
 };
 
 #endif
