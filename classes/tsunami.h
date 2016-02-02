@@ -18,7 +18,11 @@ public:
 	~Tsunami();
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	double proximo_ponto();
+=======
+	double valor();
+>>>>>>> master
 =======
 	double valor();
 >>>>>>> master

@@ -5,7 +5,11 @@ Tsunami::Tsunami(){;}
 Tsunami::~Tsunami(){;}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 double Tsunami::proximo_ponto() {
+=======
+double Tsunami::valor() {
+>>>>>>> master
 =======
 double Tsunami::valor() {
 >>>>>>> master
