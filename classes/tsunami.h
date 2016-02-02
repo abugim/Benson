@@ -17,15 +17,7 @@ public:
 	Tsunami();
 	~Tsunami();
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 	double proximo_ponto();
-=======
-	double valor();
->>>>>>> master
-=======
-	double valor();
->>>>>>> master
 
 	// Gets and sets
 	void set_tipo(int tipo);
