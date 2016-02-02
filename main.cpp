@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <pthread.h>
+#include "classes/tsunami.h"
 #include "classes/controle.h"
 #include "classes/quanser.h"
 

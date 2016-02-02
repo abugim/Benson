@@ -4,7 +4,11 @@ Tsunami::Tsunami(){;}
 
 Tsunami::~Tsunami(){;}
 
+<<<<<<< HEAD
 double Tsunami::proximo_ponto() {
+=======
+double Tsunami::valor() {
+>>>>>>> master
   if (tempo > periodo){
     tempo = 0;
   } else {
