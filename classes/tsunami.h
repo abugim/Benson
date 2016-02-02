@@ -1,6 +1,9 @@
+#ifndef _TSUNAMI_H
+#define _TSUNAMI_H
 
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 
 #define DEGRAU 0
 #define SENOIDAL 1
@@ -8,53 +11,41 @@
 #define SERRA 3
 #define ALEATORIO 4
 
-class tsunami
+class Tsunami
 {
 public:
-	tsunami();
-	~tsunami();
-	
-	double valor() {
+	Tsunami();
+	~Tsunami();
 
-		if (tempo > periodo){
-			tempo = 0;
-		} else { 
-			tempo += 0.1;
-		}
-
-		switch(tipo)
-		{
-			case DEGRAU:
-				return this->amp + this->offset;
-				break;
-
-			case SENOIDAL:
-				return amp * sin((tempo / periodo) * 2 * M_PI) + this->offset;
-				break;
-
-			case QUADRADA:
-				if (tempo < periodo/2.f)
-					return this->amp + this->offset;
-				else
-					return -this->amp + this->offset;
-				break;
-
-			case SERRA:
-				return (2 * amp / periodo) * tempo - amp + this->offset;
-				break;
-
-			case ALEATORIO:
-				if (tempo == 0) {
-					srand (time(NULL));	
-					periodo = ((float) (rand()) / (float) (RAND_MAX)) * (periodo_sup - periodo_inf) + periodo_inf;
-					amp = ((float) (rand()) / (float) (RAND_MAX)) * (amp_sup - amp_inf) + amp_inf;
-				}
-				return this->amp;
-				break;
-		}
-	}
+	double valor();
 
 	// Gets and sets
+	void set_tipo(int tipo);
+	int get_tipo();
+
+	void set_tempo(double tempo);
+	double get_tempo();
+
+	void set_amp(double amp);
+	double get_amp();
+
+	void set_amp_sup(double amp_sup);
+	double get_amp_sup();
+
+	void set_amp_inf(double amp_inf);
+	double get_amp_inf();
+
+	void set_periodo(double periodo);
+	double get_periodo();
+
+	void set_periodo_sup(double periodo_sup);
+	double get_periodo_sup();
+
+	void set_periodo_inf(double periodo_inf);
+	double get_periodo_inf();
+
+	void set_offset(double offset);
+	double get_offset();
 
 private:
 	int tipo;
@@ -71,3 +62,5 @@ private:
 
 	double offset;
 };
+
+#endif
