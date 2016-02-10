@@ -15,6 +15,12 @@ public:
 protected:
 	void trava_seguranca(double *sinal_controle, double *nivel_um, double *nivel_dois);
 
+	void set_nivel_um(double nivel_um);
+	double get_nivel_um();
+
+	void set_nivel_dois(double nivel_dois);
+	double get_nivel_dois();
+	
 private:
 	Tsunami *onda;
 
