@@ -25,11 +25,13 @@ int leitura_um;
 int leitura_dois;
 int escrita;
 int newsockfd;
+bool debug = false;
 
 void* controle_t(void *param);
 
 int main(int argc, char const *argv[])
 {
+	debug = atoi(argv[1]);
 	printf("Inicialização\n");
     int sockfd, newsockfd, portno;
     socklen_t clilen;
@@ -85,7 +87,8 @@ int main(int argc, char const *argv[])
 
 	sscanf(buffer, "%s %d %d %d %d", ipeu, &porta, &leitura_um, &leitura_dois, &escrita);
 
-	q = new Quanser(ipeu, porta);
+	if (!debug)
+		q = new Quanser(ipeu, porta);
 
 	// Inicialização da thread de controle
 	pthread_t controle;
@@ -142,16 +145,25 @@ void *controle_t(void *param)
 	char* estado;
 	double tempo = 0;
 	int n = 0;
+	Tsunami *nivel_um_fake = new Tsunami(QUADRADA, 5, 0, 0, 5, 0, 0, 10);
+	Tsunami *nivel_dois_fake = new Tsunami(SERRA, 5, 0, 0, 5, 0, 0, 10);
 	while(true)
 	{
 		if (!esperando)
 		{
 			// Colocar mutex
-			controlador->set_nivel_um(q->readAD(leitura_um));
-			controlador->set_nivel_dois(q->readAD(leitura_dois));
-
+			if (!debug){
+				controlador->set_nivel_um(q->readAD(leitura_um));
+				controlador->set_nivel_dois(q->readAD(leitura_dois));
+			} else {
+				controlador->set_nivel_um(nivel_um_fake->proximo_ponto());
+				controlador->set_nivel_dois(nivel_dois_fake->proximo_ponto());
+			}
 			// Calculo do controle
-			q->writeDA(escrita, controlador->acao());
+			if (!debug)
+				q->writeDA(escrita, controlador->acao());
+			else
+				controlador->acao();
 
 			/* Write a response to the client */
 			estado = controlador->reporte(tempo);
