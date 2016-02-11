@@ -1,8 +1,30 @@
 #include "tsunami.h"
 
-Tsunami::Tsunami(){;}
+Tsunami::Tsunami(){
+    this->tipo = 0;
+    this->amp = 0;
+    this->amp_sup = 0;
+    this->amp_inf = 0;
+    this->periodo = 0;
+    this->periodo_sup = 0;
+    this->periodo_inf = 0;
+    this->offset = 0;
+}
 
-Tsunami::~Tsunami(){;}
+Tsunami::Tsunami(int tipo, double amp, double amp_sup, double amp_inf, double periodo, double periodo_sup, double periodo_inf, double offset){
+    this->tipo = tipo;
+    this->amp = amp;
+    this->amp_sup = amp_sup;
+    this->amp_inf = amp_inf;
+    this->periodo = periodo;
+    this->periodo_sup = periodo_sup;
+    this->periodo_inf = periodo_inf;
+    this->offset = offset;
+}
+
+Tsunami::~Tsunami(){
+    delete this;
+}
 
 double Tsunami::proximo_ponto() {
   if (tempo > periodo){

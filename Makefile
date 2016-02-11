@@ -3,15 +3,16 @@ CXX := g++
 
 all: benson
 
-%.o: %.cpp
+%.o: %.cpp #%.h
 		$(CXX) -c $< -o $@
 
 %.o: %.hpp
 		$(CXX) -c $< -o $@
 
-benson: main.o
+benson: #main.o
 		@echo "** Building the Benson"
-		$(CXX) -o benson main.o $(LIBS)
+		g++ main.cpp classes/tsunami.cpp classes/controle.cpp classes/malha_fechada.cpp -o benson -lm -lpthread
+		#$(CXX) -o benson main.o $(LIBS)
 
 clean:
 		@echo "** Removing object files and executable..."

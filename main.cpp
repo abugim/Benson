@@ -2,6 +2,7 @@
 #include <pthread.h>
 #include "classes/tsunami.h"
 #include "classes/controle.h"
+#include "classes/malha_fechada.h"
 #include "classes/quanser.h"
 
 #include <stdlib.h>
@@ -23,8 +24,9 @@ int porta;
 int leitura_um;
 int leitura_dois;
 int escrita;
+int newsockfd;
 
-void *controle_t(void *param);
+void* controle_t(void *param);
 
 int main(int argc, char const *argv[])
 {
@@ -81,7 +83,7 @@ int main(int argc, char const *argv[])
 		exit(1);
 	}
 
-	sscanf(buffer, "%*s %d %d %d %d", ipeu, porta, leitura_um, leitura_dois, escrita);
+	sscanf(buffer, "%s %d %d %d %d", ipeu, &porta, &leitura_um, &leitura_dois, &escrita);
 
 	q = new Quanser(ipeu, porta);
 
@@ -106,9 +108,9 @@ int main(int argc, char const *argv[])
 		int tipo;
 		double amp, amp_sup, amp_inf, periodo, periodo_sup, periodo_inf, offset;
 		sscanf(buffer, "%d %lf %lf %lf %lf %lf %lf %lf",
-						tipo, amp, amp_sup, amp_inf, periodo, periodo_sup, periodo_inf, offset);
-		Tsunami onda = new Tsunami(tipo, amp, amp_sup, amp_inf, periodo, periodo_sup, periodo_inf, offset);
-		sscanf(buffer, "%d", tipo);
+						&tipo, &amp, &amp_sup, &amp_inf, &periodo, &periodo_sup, &periodo_inf, &offset);
+		//Tsunami *onda = new Tsunami(tipo, amp, amp_sup, amp_inf, periodo, periodo_sup, periodo_inf, offset);
+		sscanf(buffer, "%d", &tipo);
 		// Colocar mutex
 		switch (tipo) {
 			case PIDPID:
@@ -120,10 +122,10 @@ int main(int argc, char const *argv[])
 			case SR:
 				break;
 			case MA:
-				controlador = new controlador();
+				controlador = new Controle();
 				break;
 			case MF:
-				controlador =  new Malha_Fechada();
+				controlador = new Malha_Fechada();
 				break;
 			default:
 				break;
@@ -139,24 +141,25 @@ void *controle_t(void *param)
 {
 	char* estado;
 	double tempo = 0;
+	int n = 0;
 	while(true)
 	{
 		if (!esperando)
 		{
 			// Colocar mutex
-			controlador.set_nivel_um(q->readAD(leitura_um));
-			controlador.set_nivel_dois(q->readAD(leitura_dois));
+			controlador->set_nivel_um(q->readAD(leitura_um));
+			controlador->set_nivel_dois(q->readAD(leitura_dois));
 
 			// Calculo do controle
-			q->writeDA(escrita, controlador.acao());
+			q->writeDA(escrita, controlador->acao());
 
 			/* Write a response to the client */
-			estado = controlador.reporte(tempo);
+			estado = controlador->reporte(tempo);
 		    n = send(newsockfd, estado, strlen(estado), 0);
 		    printf("Estado enviado\n");
 		    if (n < 0) {
-		      perror("ERROR writing to socket");
-		      exit(1);
+				perror("ERROR writing to socket");
+				exit(1);
 		    }
 			tempo += 0.1;
 		}

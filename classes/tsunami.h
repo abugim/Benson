@@ -15,7 +15,8 @@ class Tsunami
 {
 public:
 	Tsunami();
-	~Tsunami();
+	Tsunami(int tipo, double amp, double amp_sup, double amp_inf, double periodo, double periodo_sup, double periodo_inf, double offset);
+	virtual ~Tsunami();
 
 	double proximo_ponto();
 

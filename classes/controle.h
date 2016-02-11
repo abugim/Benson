@@ -10,16 +10,21 @@
 #define T_ONDA 3
 #define T_SAT 4
 
+#define MA 0
+#define MF 1
+#define PID 2
+#define PIDPID 3
+#define OE 4
+#define SR 5
+
 class Controle
 {
 public:
 	Controle();
-	~Controle();
+	virtual ~Controle();
 
 	virtual double acao();
 	virtual char* reporte(double tempo);
-protected:
-	void trava_seguranca(double *sinal_controle, double *nivel_um, double *nivel_dois);
 
 	void set_nivel_um(double nivel_um);
 	double get_nivel_um();
@@ -27,7 +32,8 @@ protected:
 	void set_nivel_dois(double nivel_dois);
 	double get_nivel_dois();
 
-private:
+protected:
+	void trava_seguranca();
 	Tsunami *onda;
 
 	double *nivel_um;
