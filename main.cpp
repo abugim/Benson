@@ -137,6 +137,8 @@ int main(int argc, char const *argv[])
 
 void *controle_t(void *param)
 {
+	char* estado;
+	double tempo = 0;
 	while(true)
 	{
 		if (!esperando)
@@ -149,12 +151,14 @@ void *controle_t(void *param)
 			q->writeDA(escrita, controlador.acao());
 
 			/* Write a response to the client */
-		    n = send(newsockfd,"I got your message", 18, 0);
-		    printf("sent\n");
+			estado = controlador.reporte(tempo);
+		    n = send(newsockfd, estado, strlen(estado), 0);
+		    printf("Estado enviado\n");
 		    if (n < 0) {
 		      perror("ERROR writing to socket");
 		      exit(1);
 		    }
+			tempo += 0.1;
 		}
 	}
 }

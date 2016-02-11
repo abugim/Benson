@@ -4,6 +4,12 @@
 #include "tsunami.h"
 #include "quanser.h"
 
+#define TEMPO 0
+#define NIVEL_UM 1
+#define NIVEL_DOIS 2
+#define T_ONDA 3
+#define T_SAT 4
+
 class Controle
 {
 public:
@@ -11,7 +17,7 @@ public:
 	~Controle();
 
 	virtual double acao();
-	virtual char* reporte();
+	virtual char* reporte(double tempo);
 protected:
 	void trava_seguranca(double *sinal_controle, double *nivel_um, double *nivel_dois);
 
@@ -20,14 +26,14 @@ protected:
 
 	void set_nivel_dois(double nivel_dois);
 	double get_nivel_dois();
-	
+
 private:
 	Tsunami *onda;
 
 	double *nivel_um;
 	double *nivel_dois;
 
-	double *sinal_controle;
+	double *controle_saturado;
 	double *controle;
 };
 

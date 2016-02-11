@@ -1,20 +1,28 @@
 #include "controle.h"
 
 double Controle::acao(){
-  return this->referencia->valor();
+    *controle = onda->proximo_ponto();
+    trava_seguranca();
+    return *controle_saturado;
 }
 
-char* Controle::reporte(){
-  // Implementar
-  return char*;
+char* Controle::reporte(double tempo){
+    char* mensagem;
+    sprintf(mensagem, "%d\t%lf\t%d\t%lf\t%d\t%lf\t%d\t%lf\t%d\t%lf",
+                    TEMPO, tempo,
+                    NIVEL_UM, *nivel_um,
+                    NIVEL_DOIS, *nivel_dois,
+                    T_ONDA, *controle,
+                    T_SAT, *controle_saturado);
+    return mensagem;
 }
 
-void Controle::trava_seguranca(double *sinal_controle, double *nivel_um, double *nivel_dois){
-  if (*sinal_controle > 4) *sinal_controle = 4;
-  if (*sinal_controle < -4) *sinal_controle = -4;
-  if (*nivel_um > 28 && *sinal_controle > 3.15) *sinal_controle = 3.15;
-  if (*nivel_um > 29 && *sinal_controle > 0) *sinal_controle = 0;
-  if (*nivel_um < 4 && *sinal_controle < 0) *sinal_controle = 0;
+void Controle::trava_seguranca(){
+  if (*controle > 4) *sinal_controle = 4;
+  if (*controle < -4) *controle_saturado = -4;
+  if (*nivel_um > 28 && *controle > 3.15) *controle_saturado = 3.15;
+  if (*nivel_um > 29 && *controle > 0) *controle_saturado = 0;
+  if (*nivel_um < 4 && *controle < 0) *controle_saturado = 0;
 }
 
 void Controle::set_nivel_um(double nivel_um){
