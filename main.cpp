@@ -15,6 +15,14 @@
 #include <sys/socket.h>
 
 bool esperando = true;
+Controle* controlador;
+Quanser* q;
+
+char* ipeu;
+int porta;
+int leitura_um;
+int leitura_dois;
+int escrita;
 
 void *controle_t(void *param);
 
@@ -31,8 +39,8 @@ int main(int argc, char const *argv[])
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
     if (sockfd < 0) {
-      perror("ERROR opening socket");
-      exit(1);
+		perror("ERROR opening socket");
+		exit(1);
     }
 
     /* Initialize socket structure */
@@ -45,8 +53,8 @@ int main(int argc, char const *argv[])
 
     /* Now bind the host address using bind() call.*/
     if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-      perror("ERROR on binding");
-      exit(1);
+		perror("ERROR on binding");
+    	exit(1);
     }
 
      /* Now start listening for the clients, here process will
@@ -60,16 +68,22 @@ int main(int argc, char const *argv[])
     newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
 
     if (newsockfd < 0) {
-      perror("ERROR on accept");
-      exit(1);
+		perror("ERROR on accept");
+		exit(1);
     }
 
-	// Inicialização da thread de recepção
-	pthread_t receptor;
-	pthread_attr_t attr_receptor;
-	pthread_attr_init(&attr_receptor);
-	pthread_create(&receptor, &attr_receptor, receptor_t, NULL);
-	// Fim inicialização da thread de recepção
+	// recepção e configuração;
+	bzero(buffer,256);
+	n = recv(newsockfd, buffer, 255, 0);
+	printf("Configuração recebida.\n");
+	if (n < 0) {
+		perror("ERROR reading from socket");
+		exit(1);
+	}
+
+	sscanf(buffer, "%*s %d %d %d %d", ipeu, porta, leitura_um, leitura_dois, escrita);
+
+	q = new Quanser(ipeu, porta);
 
 	// Inicialização da thread de controle
 	pthread_t controle;
@@ -82,13 +96,38 @@ int main(int argc, char const *argv[])
 		// recepção e configuração;
 		bzero(buffer,256);
 	    n = recv(newsockfd, buffer, 255, 0);
-	    printf("received\n");
+	    printf("Configuração recebida.\n");
 	    if (n < 0) {
-	      perror("ERROR reading from socket");
-	      exit(1);
+			perror("ERROR reading from socket");
+			exit(1);
 	    }
-		// Compartilha mensagem com thread de controle
-	    printf("Here is the message: %s\n",buffer);
+	    printf("Configuração: %s\n", buffer);
+
+		int tipo;
+		double amp, amp_sup, amp_inf, periodo, periodo_sup, periodo_inf, offset;
+		sscanf(buffer, "%d %lf %lf %lf %lf %lf %lf %lf",
+						tipo, amp, amp_sup, amp_inf, periodo, periodo_sup, periodo_inf, offset);
+		Tsunami onda = new Tsunami(tipo, amp, amp_sup, amp_inf, periodo, periodo_sup, periodo_inf, offset);
+		sscanf(buffer, "%d", tipo);
+		// Colocar mutex
+		switch (tipo) {
+			case PIDPID:
+				break;
+			case PID:
+				break;
+			case OE:
+				break;
+			case SR:
+				break;
+			case MA:
+				controlador = new controlador();
+				break;
+			case MF:
+				controlador =  new Malha_Fechada();
+				break;
+			default:
+				break;
+		}
 
 		esperando = false;
 	}
@@ -98,12 +137,11 @@ int main(int argc, char const *argv[])
 
 void *controle_t(void *param)
 {
-	Quanser* q = new Quanser("10.13.97.69", 20072);
-
 	while(true)
 	{
 		if (!esperando)
 		{
+			// Colocar mutex
 			controlador.set_nivel_um(q->readAD(leitura_um));
 			controlador.set_nivel_dois(q->readAD(leitura_dois));
 
