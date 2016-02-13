@@ -17,6 +17,8 @@
 #define OE 4
 #define SR 5
 
+#define CONSTANTE_SENSOR 6.25
+
 class Controle
 {
 public:
@@ -25,6 +27,8 @@ public:
 
 	virtual double acao();
 	virtual char* reporte(double tempo);
+
+	void set_onda(Tsunami* onda);
 
 	void set_nivel_um(double nivel_um);
 	double get_nivel_um();

@@ -27,10 +27,10 @@ Tsunami::~Tsunami(){
 }
 
 double Tsunami::proximo_ponto() {
-  if (tempo > periodo){
-    tempo = 0;
+  if (this->tempo > this->periodo){
+    this->tempo = 0;
   } else {
-    tempo += 0.1;
+    this->tempo += 0.1;
   }
 
   switch(tipo)
@@ -40,25 +40,25 @@ double Tsunami::proximo_ponto() {
       break;
 
     case SENOIDAL:
-      return amp * sin((tempo / periodo) * 2 * M_PI) + this->offset;
+      return this->amp * sin((this->tempo / this->periodo) * 2 * M_PI) + this->offset;
       break;
 
     case QUADRADA:
-      if (tempo < periodo/2.f)
+      if (this->tempo < this->periodo/2.f)
         return this->amp + this->offset;
       else
         return -this->amp + this->offset;
       break;
 
     case SERRA:
-      return (2 * amp / periodo) * tempo - amp + this->offset;
+      return (2 * this->amp / this->periodo) * this->tempo - this->amp + this->offset;
       break;
 
     case ALEATORIO:
-      if (tempo == 0) {
+      if (this->tempo == 0) {
         srand (time(NULL));
-        periodo = ((float) (rand()) / (float) (RAND_MAX)) * (periodo_sup - periodo_inf) + periodo_inf;
-        amp = ((float) (rand()) / (float) (RAND_MAX)) * (amp_sup - amp_inf) + amp_inf;
+        this->periodo = ((float) (rand()) / (float) (RAND_MAX)) * (this->periodo_sup - this->periodo_inf) + this->periodo_inf;
+        this->amp = ((float) (rand()) / (float) (RAND_MAX)) * (this->amp_sup - this->amp_inf) + this->amp_inf;
       }
       return this->amp;
       break;

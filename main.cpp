@@ -15,6 +15,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <unistd.h>
+
 bool esperando = true;
 Controle* controlador;
 Quanser* q;
@@ -26,12 +28,16 @@ int leitura_dois;
 int escrita;
 int newsockfd;
 bool debug = false;
+bool debug_local = false;
+bool sem_planta = false;
 
 void* controle_t(void *param);
 
 int main(int argc, char const *argv[])
 {
-	debug = atoi(argv[1]);
+	if (argc >= 2)
+		sem_planta = atoi(argv[1]) == 1 ? true : false;
+
 	printf("Inicialização\n");
     int sockfd, newsockfd, portno;
     socklen_t clilen;
@@ -71,24 +77,31 @@ int main(int argc, char const *argv[])
     /* Accept actual connection from the client */
     newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
 
+    printf("Cliente recebido\n");
+
     if (newsockfd < 0) {
 		perror("ERROR on accept");
 		exit(1);
     }
 
 	// recepção e configuração;
-	bzero(buffer,256);
-	n = recv(newsockfd, buffer, 255, 0);
-	printf("Configuração recebida.\n");
-	if (n < 0) {
-		perror("ERROR reading from socket");
-		exit(1);
-	}
+	if (!sem_planta) {
+		bzero(buffer,256);
+		n = recv(newsockfd, buffer, 255, 0);
+		printf("Configuração recebida.\n");
+		if (n < 0) {
+			perror("ERROR reading from socket");
+			exit(1);
+		}
 
-	sscanf(buffer, "%s %d %d %d %d", ipeu, &porta, &leitura_um, &leitura_dois, &escrita);
-
-	if (!debug)
+		sscanf(buffer, "%s %d %d %d %d", ipeu, &porta, &leitura_um, &leitura_dois, &escrita);
 		q = new Quanser(ipeu, porta);
+	}
+	// q = new Quanser("10.13.99.69", 20081);
+	//
+	// leitura_um = 0;
+	// leitura_dois = 1;
+	// escrita = 0;
 
 	// Inicialização da thread de controle
 	pthread_t controle;
@@ -98,45 +111,45 @@ int main(int argc, char const *argv[])
 	// Fim inicialização da thread de controle
 
 	while (true) {
-		// recepção e configuração;
-		bzero(buffer,256);
-	    n = recv(newsockfd, buffer, 255, 0);
-	    printf("Configuração recebida.\n");
-	    if (n < 0) {
-			perror("ERROR reading from socket");
-			exit(1);
-	    }
-	    printf("Configuração: %s\n", buffer);
+		if (!sem_planta){
+			// recepção e configuração;
+			bzero(buffer,256);
+		    	n = recv(newsockfd, buffer, 255, 0);
+		    printf("Configuração recebida.\n");
+		    if (n < 0) {
+				perror("ERROR reading from socket");
+				exit(1);
+		    }
+		    printf("Configuração: %s\n", buffer);
 
-		int tipo;
-		double amp, amp_sup, amp_inf, periodo, periodo_sup, periodo_inf, offset;
-		sscanf(buffer, "%d %lf %lf %lf %lf %lf %lf %lf",
-						&tipo, &amp, &amp_sup, &amp_inf, &periodo, &periodo_sup, &periodo_inf, &offset);
-		//Tsunami *onda = new Tsunami(tipo, amp, amp_sup, amp_inf, periodo, periodo_sup, periodo_inf, offset);
-		sscanf(buffer, "%d", &tipo);
-		// Colocar mutex
-		switch (tipo) {
-			case PIDPID:
-				break;
-			case PID:
-				break;
-			case OE:
-				break;
-			case SR:
-				break;
-			case MA:
-				controlador = new Controle();
-				break;
-			case MF:
-				controlador = new Malha_Fechada();
-				break;
-			default:
-				break;
+			int tipo;
+			double amp, amp_sup, amp_inf, periodo, periodo_sup, periodo_inf, offset;
+			sscanf(buffer, "%d %lf %lf %lf %lf %lf %lf %lf",
+							&tipo, &amp, &amp_sup, &amp_inf, &periodo, &periodo_sup, &periodo_inf, &offset);
+			//Tsunami *onda = new Tsunami(tipo, amp, amp_sup, amp_inf, periodo, periodo_sup, periodo_inf, offset);
+			sscanf(buffer, "%d", &tipo);
+			// Colocar mutex
+			switch (tipo) {
+					case PIDPID:
+					break;
+				case PID:
+					break;
+				case OE:
+					break;
+				case SR:
+					break;
+				case MA:
+					controlador = new Controle();
+					break;
+				case MF:
+					controlador = new Malha_Fechada();
+					break;
+				default:
+					break;
+			}
 		}
-
 		esperando = false;
 	}
-
 	return 0;
 }
 
@@ -145,6 +158,11 @@ void *controle_t(void *param)
 	char* estado;
 	double tempo = 0;
 	int n = 0;
+
+	printf("Controle inciado\n");
+	controlador = new Malha_Fechada();
+	controlador->set_onda(new Tsunami(DEGRAU, 15, 0, 0, 0, 0, 0, 0));
+
 	Tsunami *nivel_um_fake = new Tsunami(QUADRADA, 5, 0, 0, 5, 0, 0, 10);
 	Tsunami *nivel_dois_fake = new Tsunami(SERRA, 5, 0, 0, 5, 0, 0, 10);
 	while(true)
@@ -152,28 +170,26 @@ void *controle_t(void *param)
 		if (!esperando)
 		{
 			// Colocar mutex
-			if (!debug){
-				controlador->set_nivel_um(q->readAD(leitura_um));
-				controlador->set_nivel_dois(q->readAD(leitura_dois));
-			} else {
-				controlador->set_nivel_um(nivel_um_fake->proximo_ponto());
-				controlador->set_nivel_dois(nivel_dois_fake->proximo_ponto());
-			}
+			// controlador->set_nivel_um(q->readAD(leitura_um));
+			// controlador->set_nivel_dois(q->readAD(leitura_dois));
+			controlador->set_nivel_um(nivel_um_fake->proximo_ponto());
+			controlador->set_nivel_dois(nivel_dois_fake->proximo_ponto());
+
 			// Calculo do controle
-			if (!debug)
-				q->writeDA(escrita, controlador->acao());
-			else
-				controlador->acao();
+			//q->writeDA(escrita, controlador->acao());
+			controlador->acao();
 
 			/* Write a response to the client */
 			estado = controlador->reporte(tempo);
-		    n = send(newsockfd, estado, strlen(estado), 0);
-		    printf("Estado enviado\n");
+		    n = write(newsockfd, estado, strlen(estado));
 		    if (n < 0) {
 				perror("ERROR writing to socket");
 				exit(1);
 		    }
+			printf("Estado enviado\n");
+
 			tempo += 0.1;
+			usleep(100000);
 		}
 	}
 }

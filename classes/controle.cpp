@@ -1,13 +1,11 @@
 #include "controle.h"
 
 Controle::Controle(){
-    onda = NULL;
+    this->nivel_um = new double;
+    this->nivel_dois = new double;
 
-    *nivel_um = 0;
-    *nivel_dois = 0;
-
-    *controle = 0;
-    *controle_saturado = 0;
+    this->controle = new double;
+    this->controle_saturado = new double;
 }
 
 Controle::~Controle(){
@@ -16,9 +14,12 @@ Controle::~Controle(){
 }
 
 double Controle::acao(){
-    *controle = onda->proximo_ponto();
+    *(this->controle) = this->onda->proximo_ponto();
+    *(this->controle_saturado) = 2;
     trava_seguranca();
-    return *controle_saturado;
+    printf("controle: %lf\n", *controle);
+    printf("controle_saturado: %lf\n", *controle_saturado);
+    return *(this->controle_saturado);
 };
 
 char* Controle::reporte(double tempo){
@@ -33,22 +34,30 @@ char* Controle::reporte(double tempo){
 };
 
 void Controle::trava_seguranca(){
-    if (*controle > 4) *controle_saturado = 4;
-    if (*controle < -4) *controle_saturado = -4;
-    if (*nivel_um > 28 && *controle > 3.15) *controle_saturado = 3.15;
-    if (*nivel_um > 29 && *controle > 0) *controle_saturado = 0;
-    if (*nivel_um < 4 && *controle < 0) *controle_saturado = 0;
+    *(this->controle_saturado) = *(this->controle);
+    if (*(this->controle) > 4) *(this->controle_saturado) = 4;
+    if (*(this->controle) < -4) *(this->controle_saturado) = -4;
+    if (*(this->nivel_um) > 28 && *(this->controle) > 3.15) *(this->controle_saturado) = 3.15;
+    if (*(this->nivel_um) > 29 && *(this->controle) > 0) *(this->controle_saturado) = 0;
+    if (*(this->nivel_um) < 4 && *(this->controle) < 0) *(this->controle_saturado) = 0;
+};
+
+
+void Controle::set_onda(Tsunami* onda){
+    this->onda = onda;
 };
 
 void Controle::set_nivel_um(double nivel_um){
-    *(this->nivel_um) = nivel_um;
+    printf("nivel_um: %lf\n", nivel_um * CONSTANTE_SENSOR);
+    *(this->nivel_um) = nivel_um * CONSTANTE_SENSOR;
 };
 double Controle::get_nivel_um(){
     return *(this->nivel_um);
 };
 
 void Controle::set_nivel_dois(double nivel_dois){
-    *(this->nivel_dois) = nivel_dois;
+    printf("nivel_dois: %lf\n", nivel_dois * CONSTANTE_SENSOR);
+    *(this->nivel_dois) = nivel_dois * CONSTANTE_SENSOR;
 };
 double Controle::get_nivel_dois(){
     return *(this->nivel_dois);

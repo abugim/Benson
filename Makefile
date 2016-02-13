@@ -9,7 +9,7 @@ all: benson
 %.o: %.hpp
 		$(CXX) -c $< -o $@
 
-benson: #main.o
+benson: main.cpp
 		@echo "** Building the Benson"
 		g++ main.cpp classes/tsunami.cpp classes/controle.cpp classes/malha_fechada.cpp -o benson -lm -lpthread
 		#$(CXX) -o benson main.o $(LIBS)
