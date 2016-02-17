@@ -17,12 +17,13 @@ double Malha_Fechada::acao(){
 
 char* Malha_Fechada::reporte(double tempo){
     char* mensagem;
-    sprintf(mensagem, "%d\t%lf\t%d\t%lf\t%d\t%lf\t%d\t%lf\t%d\t%lf\t%d\t%lf",
+    sprintf(mensagem, "%d|%lf|%d|%lf|%d|%lf|%d|%lf|%d|%lf|%d|%lf\n",
                     TEMPO, tempo,
                     NIVEL_UM, *(this->nivel_um),
                     NIVEL_DOIS, *(this->nivel_dois),
                     REF, *(this->referencia),
                     ERRO, *(this->controle),
                     ERRO_SAT, *(this->controle_saturado));
+
     return mensagem;
 }

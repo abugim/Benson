@@ -15,16 +15,13 @@ Controle::~Controle(){
 
 double Controle::acao(){
     *(this->controle) = this->onda->proximo_ponto();
-    *(this->controle_saturado) = 2;
     trava_seguranca();
-    printf("controle: %lf\n", *controle);
-    printf("controle_saturado: %lf\n", *controle_saturado);
     return *(this->controle_saturado);
 };
 
 char* Controle::reporte(double tempo){
     char* mensagem;
-    sprintf(mensagem, "%d\t%lf\t%d\t%lf\t%d\t%lf\t%d\t%lf\t%d\t%lf",
+    sprintf(mensagem, "%d|%lf|%d|%lf|%d|%lf|%d|%lf|%d|%lf\n",
                     TEMPO, tempo,
                     NIVEL_UM, *nivel_um,
                     NIVEL_DOIS, *nivel_dois,
@@ -48,7 +45,6 @@ void Controle::set_onda(Tsunami* onda){
 };
 
 void Controle::set_nivel_um(double nivel_um){
-    printf("nivel_um: %lf\n", nivel_um * CONSTANTE_SENSOR);
     *(this->nivel_um) = nivel_um * CONSTANTE_SENSOR;
 };
 double Controle::get_nivel_um(){
@@ -56,7 +52,6 @@ double Controle::get_nivel_um(){
 };
 
 void Controle::set_nivel_dois(double nivel_dois){
-    printf("nivel_dois: %lf\n", nivel_dois * CONSTANTE_SENSOR);
     *(this->nivel_dois) = nivel_dois * CONSTANTE_SENSOR;
 };
 double Controle::get_nivel_dois(){
