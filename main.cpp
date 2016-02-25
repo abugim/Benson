@@ -8,6 +8,8 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 
+#include <sstream>
+
 #include <netdb.h>
 #include <netinet/in.h>
 
@@ -88,7 +90,8 @@ int main(int argc, char const *argv[])
 		exit(1);
 	}
 	printf("%s\n", buffer);
-	sscanf(buffer, "%s %d %d %d %d", ipeu, &porta, &leitura_um, &leitura_dois, &escrita);
+	stringstream ss(buffer);
+	ss >> ipeu >> porta >> leitura_um >> leitura_dois >> escrita;
 	q = new Quanser(ipeu, porta);
 
 	// Inicialização da thread de controle
@@ -112,24 +115,39 @@ int main(int argc, char const *argv[])
 
 		int tipo, tipo_controle;
 		double amp, amp_sup, amp_inf, periodo, periodo_sup, periodo_inf, offset;
-		sscanf(buffer, "%d %lf %lf %lf %lf %lf %lf %lf %d",
-		&tipo, &amp, &amp_sup, &amp_inf, &periodo, &periodo_sup, &periodo_inf, &offset, &tipo_controle);
+		//ss(buffer);
+		//sscanf(buffer, "%d %lf %lf %lf %lf %lf %lf %lf %d",
+		//&tipo, &amp, &amp_sup, &amp_inf, &periodo, &periodo_sup, &periodo_inf, &offset, &tipo_controle);
+		ss >> tipo;
+		ss >> amp;
+		ss >> amp_sup;
+		ss >> amp_inf;
+		ss >> periodo;
+		ss >> periodo_sup;
+		ss >> periodo_inf;
+		ss >> offset;
+
 		Tsunami *onda = new Tsunami(tipo, amp, amp_sup, amp_inf, periodo, periodo_sup, periodo_inf, offset);
 		tempo = 0;
 
 		// Colocar mutex
+		ss >> tipo_controle;
 		switch (tipo_controle) {
 			case PIDPID:
 			break;
 
 			case PID:
-
 			double kp;
 			double ki;
 			double kd;
 			bool pi_d;
 
-			controlador = new PID(kp, ki, kd, pi_d);
+			ss >> kp;
+			ss >> ki;
+			ss >> kd;
+			ss >> pi_d;
+
+			controlador = new Controle_PID(kp, ki, kd, pi_d);
 			break;
 
 			case OE:

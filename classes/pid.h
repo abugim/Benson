@@ -9,16 +9,16 @@
 #define CONTROLE 11
 #define CONTROLE_SATURADO 12
 
-class PID : public Malha_Fechada {
+class Controle_PID : public Malha_Fechada {
 public:
-    PID(double kp, double ki, double kd, double pi_d);
-    virtual ~PID();
+    Controle_PID(double kp, double ki, double kd, bool pi_d);
+    virtual ~Controle_PID();
     double acao();
     char* reporte(double tempo);
 
-    double acaoP(double &erro);
-    double acaoI(double &erro);
-    double acaoD(double &erro);
+    double acaoP();
+    double acaoI();
+    double acaoD();
 private:
     // Flag para determinar se é PID ou PI-D
     bool pi_d;
@@ -30,6 +30,10 @@ private:
     double *kp;
     double *ki;
     double *kd;
-}
+
+    double *acao_prop;
+    double *acao_int;
+    double *acao_der;
+};
 
 #endif

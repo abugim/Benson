@@ -13,7 +13,7 @@ public:
     virtual ~Malha_Fechada ();
     double acao();
     char* reporte(double tempo);
-private:
+protected:
     double *referencia;
     double *erro;
 };
