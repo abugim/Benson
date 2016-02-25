@@ -15,6 +15,7 @@ public:
     char* reporte(double tempo);
 private:
     double *referencia;
+    double *erro;
 };
 
 #endif

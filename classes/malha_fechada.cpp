@@ -10,13 +10,13 @@ Malha_Fechada::~Malha_Fechada(){
 
 double Malha_Fechada::acao(){
     *(this->referencia) = onda->proximo_ponto();
-    *(this->controle) = *(this->referencia) - *(this->nivel_um);
+    *(this->erro) = *(this->referencia) - *(this->nivel_um);
+    *(this->controle) = *(this->erro);
     trava_seguranca();
     return *(this->controle_saturado);
 }
 
 char* Malha_Fechada::reporte(double tempo){
-    char* mensagem;
     sprintf(mensagem, "%d|%lf|%d|%lf|%d|%lf|%d|%lf|%d|%lf|%d|%lf\n",
                     TEMPO, tempo,
                     NIVEL_UM, *(this->nivel_um),

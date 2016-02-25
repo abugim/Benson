@@ -45,6 +45,8 @@ protected:
 
 	double *controle_saturado;
 	double *controle;
+
+	char *mensagem;
 };
 
 #endif

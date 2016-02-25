@@ -6,6 +6,7 @@ Controle::Controle(){
 
     this->controle = new double;
     this->controle_saturado = new double;
+    this->mensagem =  new char;
 }
 
 Controle::~Controle(){
@@ -20,7 +21,6 @@ double Controle::acao(){
 };
 
 char* Controle::reporte(double tempo){
-    char* mensagem;
     sprintf(mensagem, "%d|%lf|%d|%lf|%d|%lf|%d|%lf|%d|%lf\n",
                     TEMPO, tempo,
                     NIVEL_UM, *nivel_um,

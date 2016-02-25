@@ -3,6 +3,7 @@
 #include "classes/tsunami.h"
 #include "classes/controle.h"
 #include "classes/malha_fechada.h"
+#include "classes/pid.h"
 #include "classes/quanser.h"
 #include <arpa/inet.h>
 #include <stdlib.h>
@@ -122,6 +123,13 @@ int main(int argc, char const *argv[])
 			break;
 
 			case PID:
+
+			double kp;
+			double ki;
+			double kd;
+			bool pi_d;
+
+			controlador = new PID(kp, ki, kd, pi_d);
 			break;
 
 			case OE:
@@ -150,7 +158,7 @@ int main(int argc, char const *argv[])
 void *controle_t(void *param)
 {
 	char* estado;
-
+	int n2;
 	printf("Controle inciado\n");
 	while(true)
 	{
@@ -165,9 +173,8 @@ void *controle_t(void *param)
 
 			/* Write a response to the client */
 			estado = controlador->reporte(tempo);
-			printf("%s", estado);
-			n = send(newsockfd, estado, strlen(estado), 0);
-			if (n < 0) {
+			n2 = send(newsockfd, estado, strlen(estado), 0);
+			if (n2 < 0) {
 				perror("ERROR writing to socket");
 				exit(1);
 			}

@@ -1,4 +1,5 @@
 #include "tsunami.h"
+#include <stdio.h>
 
 Tsunami::Tsunami(){
     this->tempo = 0;
@@ -59,10 +60,17 @@ double Tsunami::proximo_ponto() {
         case ALEATORIO:
         if (this->tempo == 0) {
             srand(time(NULL));
-            this->periodo = ((float) (rand()) / (float) (RAND_MAX)) * (this->periodo_sup - this->periodo_inf) + this->periodo_inf;
-            this->amp = ((float) (rand()) / (float) (RAND_MAX)) * (this->amp_sup - this->amp_inf) + this->amp_inf;
+            this->periodo = (((float) (rand()) / (float) (RAND_MAX)) * (this->periodo_sup - this->periodo_inf)) + this->periodo_inf;
+            printf("p: %lf\n", this->periodo);
+            this->amp = (((float) (rand()) / (float) (RAND_MAX)) * (this->amp_sup - this->amp_inf)) + this->amp_inf;
+            printf("a: %lf\n", this->amp);
+
         }
         return this->amp;
+        break;
+
+        default:
+        return 0;
         break;
     }
 }
