@@ -10,18 +10,30 @@
 
 #include <sstream>
 
-#include <netdb.h>
-#include <netinet/in.h>
-
 #include <string.h>
-
-#include <sys/types.h>
-#include <sys/socket.h>
 
 #include <unistd.h>
 
+// WebSocket
+#include <websocketpp/config/asio_no_tls.hpp>
+#include <websocketpp/server.hpp>
+
+#define CONECTAR 0
+#define DESCONECTAR 1
+#define CTRL_CONF 3
+
+typedef websocketpp::server<websocketpp::config::asio> server;
+
+using websocketpp::lib::placeholders::_1;
+using websocketpp::lib::placeholders::_2;
+using websocketpp::lib::bind;
+
+typedef server::message_ptr message_ptr;
+// --------------------------
+
 bool esperando = true;
 Controle* controlador;
+Tsunami* onda;
 Quanser* q;
 
 char* ipeu = new char;
@@ -29,154 +41,96 @@ int porta;
 int leitura_um;
 int leitura_dois;
 int escrita;
-int newsockfd;
-int sockfd, portno;
-socklen_t clilen;
-char buffer[256];
-struct sockaddr_in serv_addr, cli_addr;
-int n;
 double tempo = 0;
+websocketpp::connection_hdl *handler;
+server *serv = new server();
 
 void* controle_t(void *param);
+void on_message(server* s, websocketpp::connection_hdl hdl, message_ptr msg);
 
-int main(int argc, char const *argv[])
-{
+void conectar(stringstream *ss);
+void desconectar();
+
+void controle(stringstream *ss);
+
+void set_onda(stringstream *ss);
+void set_onda_degrau(stringstream *ss);
+void set_onda_senoidal(stringstream *ss);
+void set_onda_quadrada(stringstream *ss);
+void set_onda_dente_serra(stringstream *ss);
+void set_onda_aleatoria(stringstream *ss);
+
+void set_controle(stringstream *ss);
+void set_malha_aberta(stringstream *ss);
+void set_malha_fechada(stringstream *ss);
+void set_pid(stringstream *ss);
+void set_pidpid(stringstream *ss);
+void set_oe(stringstream *ss);
+void set_sr(stringstream *ss);
+
+int main (int argc, char const *argv[]) {
 	printf("Inicialização\n");
-	/* First call to socket() function */
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-
-	if (sockfd < 0) {
-		perror("ERROR opening socket");
-		exit(1);
-	}
-
-	/* Initialize socket structure */
-	bzero((char *) &serv_addr, sizeof(serv_addr));
-	portno = 54321;
-
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = INADDR_ANY;
-	serv_addr.sin_port = htons(portno);
-
-	/* Now bind the host address using bind() call.*/
-	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-		perror("ERROR on binding");
-		exit(1);
-	}
-
-	/* Now start listening for the clients, here process will
-	* go in sleep mode and will wait for the incoming connection
-	*/
-
-	listen(sockfd,5);
-	clilen = sizeof(cli_addr);
-	printf("Esperando Cliente\n");
-	/* Accept actual connection from the client */
-	newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
-
-	printf("Cliente recebido\n");
-
-	if (newsockfd < 0) {
-		perror("ERROR on accept");
-		exit(1);
-	}
-
-	// recepção e configuração;
-	bzero(buffer,256);
-	n = recv(newsockfd, buffer, 255, 0);
-	printf("Configuração recebida.\n");
-	if (n < 0) {
-		perror("ERROR reading from socket");
-		exit(1);
-	}
-	printf("%s\n", buffer);
-	stringstream ss(buffer);
-	ss >> ipeu >> porta >> leitura_um >> leitura_dois >> escrita;
-	q = new Quanser(ipeu, porta);
-
 	// Inicialização da thread de controle
 	pthread_t controle;
 	pthread_attr_t attr_controle;
 	pthread_attr_init(&attr_controle);
 	pthread_create(&controle, &attr_controle, controle_t, NULL);
 	// Fim inicialização da thread de controle
-
-	while (true) {
-		// recepção e configuração;
-		bzero(buffer,256);
-		printf("Esperando configuração.\n");
-		n = recv(newsockfd, buffer, 255, 0);
-		printf("Configuração recebida.\n");
-		if (n < 0) {
-			perror("ERROR reading from socket");
-			exit(1);
-		}
-		printf("Configuração: %s\n", buffer);
-
-		int tipo, tipo_controle;
-		double amp, amp_sup, amp_inf, periodo, periodo_sup, periodo_inf, offset;
-		//ss(buffer);
-		//sscanf(buffer, "%d %lf %lf %lf %lf %lf %lf %lf %d",
-		//&tipo, &amp, &amp_sup, &amp_inf, &periodo, &periodo_sup, &periodo_inf, &offset, &tipo_controle);
-		ss >> tipo;
-		ss >> amp;
-		ss >> amp_sup;
-		ss >> amp_inf;
-		ss >> periodo;
-		ss >> periodo_sup;
-		ss >> periodo_inf;
-		ss >> offset;
-
-		Tsunami *onda = new Tsunami(tipo, amp, amp_sup, amp_inf, periodo, periodo_sup, periodo_inf, offset);
-		tempo = 0;
-
-		// Colocar mutex
-		ss >> tipo_controle;
-		switch (tipo_controle) {
-			case PIDPID:
-			break;
-
-			case PID:
-			double kp;
-			double ki;
-			double kd;
-			bool pi_d;
-
-			ss >> kp;
-			ss >> ki;
-			ss >> kd;
-			ss >> pi_d;
-
-			controlador = new Controle_PID(kp, ki, kd, pi_d);
-			break;
-
-			case OE:
-			break;
-
-			case SR:
-			break;
-
-			case MA:
-			controlador = new Controle();
-			break;
-
-			case MF:
-			controlador = new Malha_Fechada();
-			break;
-
-			default:
-			break;
-		}
-		controlador->set_onda(onda);
-		esperando = false;
-	}
+    try {
+        // Set logging settings
+        serv->set_access_channels(websocketpp::log::alevel::all);
+        serv->clear_access_channels(websocketpp::log::alevel::frame_payload);
+        // Initialize Asio
+        serv->init_asio();
+        // Register our message handler
+        serv->set_message_handler(bind(&on_message,serv,::_1,::_2));
+        // Listen on port 9002
+        serv->listen(9002);
+        // Start the serv accept loop
+        serv->start_accept();
+        // Start the ASIO io_service run loop
+        serv->run();
+    } catch (websocketpp::exception const & e) {
+        std::cout << e.what() << std::endl;
+    } catch (...) {
+        std::cout << "other exception" << std::endl;
+    }
 	return 0;
 }
 
-void *controle_t(void *param)
-{
+void on_message(server* s, websocketpp::connection_hdl hdl, message_ptr msg) {
+	// recepção e configuração;
+	handler = &hdl;
+
+    if (msg->get_payload() == "stop-listening") {
+        s->stop_listening();
+        return;
+    }
+	printf("Configuração: %s\n", msg->get_payload().c_str());
+
+	stringstream ss;
+	ss.str(msg->get_payload());
+	int tipo_mensagem;
+	ss >> tipo_mensagem;
+	switch (tipo_mensagem) {
+		case CONECTAR:
+			conectar(&ss);
+		break;
+		case DESCONECTAR:
+			desconectar();
+		break;
+		case CTRL_CONF:
+			ss >> leitura_um >> leitura_dois;
+			controle(&ss);
+			esperando = false;
+		break;
+	}
+}
+
+void *controle_t (void *param) {
+	message_ptr msg;
+
 	char* estado;
-	int n2;
 	printf("Controle inciado\n");
 	while(true)
 	{
@@ -191,14 +145,124 @@ void *controle_t(void *param)
 
 			/* Write a response to the client */
 			estado = controlador->reporte(tempo);
-			n2 = send(newsockfd, estado, strlen(estado), 0);
-			if (n2 < 0) {
-				perror("ERROR writing to socket");
-				exit(1);
-			}
+			try {
+				serv->send(*handler, estado, websocketpp::frame::opcode::text);
+		    } catch (const websocketpp::lib::error_code& e) {
+		        std::cout << "Echo failed because: " << e
+		                  << "(" << e.message() << ")" << std::endl;
+		    }
 
 			tempo += 0.1;
 			usleep(100000);
 		}
 	}
+}
+
+void conectar(stringstream *ss){
+	*ss >> ipeu >> porta;
+	q = new Quanser(ipeu, porta);
+}
+void desconectar(){
+	esperando = true;
+	delete q;
+}
+
+void controle(stringstream *ss){
+	set_onda(ss);
+	set_controle(ss);
+	controlador->set_onda(onda);
+}
+
+void set_onda(stringstream *ss){
+	int tipo_onda;
+	*ss >> tipo_onda;
+	switch (tipo_onda) {
+		case DEGRAU:
+			set_onda_degrau(ss);
+		break;
+		case SENOIDAL:
+			set_onda_senoidal(ss);
+		break;
+		case QUADRADA:
+			set_onda_quadrada(ss);
+		break;
+		case SERRA:
+			set_onda_dente_serra(ss);
+		break;
+		case ALEATORIO:
+			set_onda_aleatoria(ss);
+		break;
+	}
+}
+
+void set_onda_degrau(stringstream *ss){
+	double amp;
+	*ss >> amp;
+	onda = new Tsunami(SERRA, amp, 0, 0, 0, 0, 0, 0);
+}
+void set_onda_senoidal(stringstream *ss){
+	double amp, periodo, offset;
+	*ss >> amp >> periodo >> offset;
+	onda = new Tsunami(SENOIDAL, amp, 0, 0, periodo, 0, 0, offset);
+}
+void set_onda_quadrada(stringstream *ss){
+	double amp, periodo, offset;
+	*ss >> amp >> periodo >> offset;
+	onda = new Tsunami(QUADRADA, amp, 0, 0, periodo, 0, 0, offset);
+}
+void set_onda_dente_serra(stringstream *ss){
+	double amp, periodo, offset;
+	*ss >> amp >> periodo >> offset;
+	onda = new Tsunami(SERRA, amp, 0, 0, periodo, 0, 0, offset);
+}
+void set_onda_aleatoria(stringstream *ss){
+	double amp_sup, amp_inf, periodo_sup, periodo_inf;
+	*ss >> amp_sup >> amp_inf >> periodo_sup >> periodo_inf;
+	onda = new Tsunami(ALEATORIO, 0, amp_sup, amp_inf, 0, periodo_sup, periodo_inf, 0);
+}
+
+void set_controle(stringstream *ss){
+	int tipo_controle;
+	*ss >> tipo_controle;
+	switch (tipo_controle) {
+		case MA:
+			set_malha_aberta(ss);
+		break;
+		case MF:
+			set_malha_fechada(ss);
+		break;
+		case PID:
+			set_pid(ss);
+		break;
+		case PIDPID:
+			set_pidpid(ss);
+		break;
+		case OE:
+			set_oe(ss);
+		break;
+		case SR:
+			set_sr(ss);
+		break;
+	}
+}
+void set_malha_aberta(stringstream *ss){
+	controlador = new Controle();
+}
+void set_malha_fechada(stringstream *ss){
+	controlador = new Malha_Fechada();
+}
+void set_pid(stringstream *ss){
+	bool pi_d;
+	double kp, ki, kd;
+	*ss >> kp >> ki >> kd >> pi_d;
+	controlador = new Controle_PID(kp, ki, kd, pi_d);
+}
+void set_pidpid(stringstream *ss){
+	controlador = new Controle();
+}
+void set_oe(stringstream *ss){
+	controlador = new Controle();
+}
+void set_sr(stringstream *ss){
+	controlador = new Controle();
 }
