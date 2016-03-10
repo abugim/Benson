@@ -1,5 +1,5 @@
 #include "malha_fechada.h"
-
+#include "math.h"
 Malha_Fechada::Malha_Fechada(){
     this->referencia = new double;
     this->erro = new double;

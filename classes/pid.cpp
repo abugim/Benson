@@ -23,6 +23,7 @@ Controle_PID::Controle_PID(double kp, double ki, double kd, bool pi_d, short int
     *(this->talt) = sqrt(*(this->kd)/(*(this->ki)));
 
     this->pi_d = pi_d;
+
     this->filtro = filtro;
 
     this->acao_prop = new double;
@@ -50,10 +51,8 @@ void Controle_PID::att(double param[]){
     this->pi_d = param[3];
     printf("filtro\n");
     this->filtro = param[4];
-}
 
-void Controle_PID::back(){
-
+    *(this->talt) = sqrt(*(this->kd)/(*(this->ki)));
 }
 
 double Controle_PID::acao(){
@@ -82,10 +81,13 @@ double Controle_PID::acaoI(){
         if (((*(this->controle_saturado) == 4) &&  (*(this->erro) > 0))
             || ((*(this->controle_saturado) == -4) &&  (*(this->erro) < 0))){
             return *(this->integrador);
+        } else {
+            *(this->integrador) += *(this->ki) * 0.1 * (*(this->erro));
+            return *(this->integrador);
         }
     } else if (this->filtro == BACK_FILTRO) {
-        *(this->integrador) += *(this->ki) * 0.1 * (*(this->erro)) +
-                            (*(this->controle_saturado) - *(this->controle)) / *(this->talt);
+        *(this->integrador) += 0.1 * (*(this->ki) * (*(this->erro)) +
+                            (*(this->controle_saturado) - *(this->controle)) / *(this->talt));
     } else {
         *(this->integrador) += *(this->ki) * 0.1 * (*(this->erro));
     }
