@@ -1,6 +1,6 @@
 #include "pid.h"
 
-Controle_PID::Controle_PID(double kp, double ki, double kd, bool pi_d){
+Controle_PID::Controle_PID(double kp, double ki, double kd, bool pi_d, short int filtro){
     this->integrador = new double;
     *(this->integrador) = 0;
 
@@ -19,12 +19,41 @@ Controle_PID::Controle_PID(double kp, double ki, double kd, bool pi_d){
     this->kd = new double;
     *(this->kd) = kd;
 
+    this->talt = new double;
+    *(this->talt) = sqrt(*(this->kd)/(*(this->ki)));
+
     this->pi_d = pi_d;
+    this->filtro = filtro;
+
+    this->acao_prop = new double;
+    *(this->acao_prop) = 0;
+
+    this->acao_int = this->integrador;
+
+    this->acao_der = new double;
+    *(this->acao_der) = 0;
 }
 
 Controle_PID::~Controle_PID(){
     delete onda;
     delete this;
+}
+
+void Controle_PID::att(double param[]){
+    printf("kp\n");
+    *(this->kp) = param[0];
+    printf("ki\n");
+    *(this->ki) = param[1];
+    printf("kd\n");
+    *(this->kd) = param[2];
+    printf("pi-d\n");
+    this->pi_d = param[3];
+    printf("filtro\n");
+    this->filtro = param[4];
+}
+
+void Controle_PID::back(){
+
 }
 
 double Controle_PID::acao(){
@@ -36,17 +65,10 @@ double Controle_PID::acao(){
 }
 
 char* Controle_PID::reporte(double tempo){
-    sprintf(mensagem, "%d|%lf|%d|%lf|%d|%lf|%d|%lf|%d|%lf|%d|%lf|%d|%lf|%d|%lf|%d|%lf|%d|%lf\n",
-                    TEMPO, tempo,
-                    NIVEL_UM, *(this->nivel_um),
-                    NIVEL_DOIS, *(this->nivel_dois),
-                    REF, *(this->referencia),
-                    ERRO, *(this->erro),
-                    CONTROLE, *(this->controle),
-                    ACAOP, *(this->acao_prop),
-                    ACAOI, *(this->acao_int),
-                    ACAOD, *(this->acao_der),
-                    CONTROLE_SATURADO, *(this->controle_saturado));
+    sprintf(mensagem, "%lf|%lf,%lf,%lf,%lf,%lf,%lf|%lf,%lf,%lf",
+                tempo, *(this->erro), *(this->acao_prop), *(this->acao_int),
+                *(this->acao_der), *(this->controle), *(this->controle_saturado),
+                *(this->nivel_um), *(this->nivel_dois), *(this->referencia));
     return mensagem;
 }
 
@@ -56,7 +78,17 @@ double Controle_PID::acaoP(){
 }
 
 double Controle_PID::acaoI(){
-    *(this->integrador) += *(this->ki) * 0.1 * (*(this->erro));
+    if (this->filtro == COND_FILTRO){
+        if (((*(this->controle_saturado) == 4) &&  (*(this->erro) > 0))
+            || ((*(this->controle_saturado) == -4) &&  (*(this->erro) < 0))){
+            return *(this->integrador);
+        }
+    } else if (this->filtro == BACK_FILTRO) {
+        *(this->integrador) += *(this->ki) * 0.1 * (*(this->erro)) +
+                            (*(this->controle_saturado) - *(this->controle)) / *(this->talt);
+    } else {
+        *(this->integrador) += *(this->ki) * 0.1 * (*(this->erro));
+    }
     return *(this->integrador);
 }
 

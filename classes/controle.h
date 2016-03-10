@@ -27,6 +27,7 @@ public:
 
 	virtual double acao();
 	virtual char* reporte(double tempo);
+	virtual void att(double param[]);
 
 	void set_onda(Tsunami* onda);
 

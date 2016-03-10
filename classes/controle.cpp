@@ -6,13 +6,15 @@ Controle::Controle(){
 
     this->controle = new double;
     this->controle_saturado = new double;
-    this->mensagem =  new char;
+    this->mensagem =  (char*) malloc(2048 * sizeof(char));
 }
 
 Controle::~Controle(){
     delete onda;
     delete this;
 }
+
+void Controle::att(double param[]){}
 
 double Controle::acao(){
     *(this->controle) = this->onda->proximo_ponto();
@@ -21,12 +23,9 @@ double Controle::acao(){
 };
 
 char* Controle::reporte(double tempo){
-    sprintf(mensagem, "%d|%lf|%d|%lf|%d|%lf|%d|%lf|%d|%lf\n",
-                    TEMPO, tempo,
-                    NIVEL_UM, *nivel_um,
-                    NIVEL_DOIS, *nivel_dois,
-                    T_ONDA, *controle,
-                    T_SAT, *controle_saturado);
+    this->mensagem =  (char*) malloc(2048 * sizeof(char));
+    sprintf(mensagem, "%lf|%lf,%lf|%lf,%lf",
+                tempo, *controle, *controle_saturado, *nivel_um, *nivel_dois);
     return mensagem;
 };
 

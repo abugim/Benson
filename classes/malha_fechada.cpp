@@ -2,7 +2,10 @@
 
 Malha_Fechada::Malha_Fechada(){
     this->referencia = new double;
+    this->erro = new double;
 }
+
+//void Malha_Fechada::att(double param[]){}
 
 Malha_Fechada::~Malha_Fechada(){
     delete this;
@@ -17,13 +20,9 @@ double Malha_Fechada::acao(){
 }
 
 char* Malha_Fechada::reporte(double tempo){
-    sprintf(mensagem, "%d|%lf|%d|%lf|%d|%lf|%d|%lf|%d|%lf|%d|%lf\n",
-                    TEMPO, tempo,
-                    NIVEL_UM, *(this->nivel_um),
-                    NIVEL_DOIS, *(this->nivel_dois),
-                    REF, *(this->referencia),
-                    ERRO, *(this->controle),
-                    ERRO_SAT, *(this->controle_saturado));
+    sprintf(mensagem, "%lf|%lf,%lf|%lf,%lf,%lf",
+                tempo,*(this->controle), *(this->controle_saturado),
+                 *(this->nivel_um), *(this->nivel_dois), *(this->referencia));
 
     return mensagem;
 }

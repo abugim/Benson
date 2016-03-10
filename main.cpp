@@ -8,9 +8,11 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 
+#include <queue>
+
 #include <sstream>
 
-#include <string.h>
+#include <string>
 
 #include <unistd.h>
 
@@ -20,7 +22,9 @@
 
 #define CONECTAR 0
 #define DESCONECTAR 1
-#define CTRL_CONF 3
+#define CTRL_CONF 2
+#define DATA 3
+#define ATT_CTRL 4
 
 typedef websocketpp::server<websocketpp::config::asio> server;
 
@@ -36,13 +40,15 @@ Controle* controlador;
 Tsunami* onda;
 Quanser* q;
 
+std::queue<char*> fila_msg;
+
 char* ipeu = new char;
 int porta;
 int leitura_um;
 int leitura_dois;
 int escrita;
 double tempo = 0;
-websocketpp::connection_hdl *handler;
+
 server *serv = new server();
 
 void* controle_t(void *param);
@@ -68,8 +74,16 @@ void set_pidpid(stringstream *ss);
 void set_oe(stringstream *ss);
 void set_sr(stringstream *ss);
 
+void controle_att(stringstream *ss);
+
+void att_pid(stringstream *ss);
+void att_pidpid(stringstream *ss);
+void att_oe(stringstream *ss);
+void att_sr(stringstream *ss);
+
 int main (int argc, char const *argv[]) {
 	printf("Inicialização\n");
+
 	// Inicialização da thread de controle
 	pthread_t controle;
 	pthread_attr_t attr_controle;
@@ -100,29 +114,57 @@ int main (int argc, char const *argv[]) {
 
 void on_message(server* s, websocketpp::connection_hdl hdl, message_ptr msg) {
 	// recepção e configuração;
-	handler = &hdl;
-
     if (msg->get_payload() == "stop-listening") {
         s->stop_listening();
         return;
     }
-	printf("Configuração: %s\n", msg->get_payload().c_str());
+
+	printf("Mensagem: %s\n", msg->get_payload().c_str());
 
 	stringstream ss;
 	ss.str(msg->get_payload());
 	int tipo_mensagem;
 	ss >> tipo_mensagem;
+	//printf("Tipo de mensagem: %d\n", tipo_mensagem);
+
 	switch (tipo_mensagem) {
 		case CONECTAR:
 			conectar(&ss);
 		break;
+
 		case DESCONECTAR:
 			desconectar();
 		break;
+
 		case CTRL_CONF:
-			ss >> leitura_um >> leitura_dois;
+			esperando = true;
+			tempo = 0;
+			while(!fila_msg.empty())
+				fila_msg.pop();
+			ss >> leitura_um >> leitura_dois >> escrita;
 			controle(&ss);
 			esperando = false;
+		break;
+
+		case ATT_CTRL:
+		//string estados;
+		esperando = true;
+		ss >> leitura_um >> leitura_dois >> escrita;
+		if (controle !=  NULL) {
+			controle_att(&ss);
+		}
+		esperando = false;
+		break;
+
+		case DATA:
+			string estados;
+			while (!fila_msg.empty()) {
+				//printf("Inserir na fila mensagem: %s\n", fila_msg.front());
+				estados += fila_msg.front();
+				fila_msg.pop();
+				estados += ";";
+			}
+			s->send(hdl, estados, websocketpp::frame::opcode::text);
 		break;
 	}
 }
@@ -137,20 +179,18 @@ void *controle_t (void *param) {
 		if (!esperando)
 		{
 			// Colocar mutex
+
 			controlador->set_nivel_um(q->readAD(leitura_um));
 			controlador->set_nivel_dois(q->readAD(leitura_dois));
 
 			// Calculo do controle
 			q->writeDA(escrita, controlador->acao());
+			controlador->acao();
+			//printf("Controlador\n");
 
 			/* Write a response to the client */
 			estado = controlador->reporte(tempo);
-			try {
-				serv->send(*handler, estado, websocketpp::frame::opcode::text);
-		    } catch (const websocketpp::lib::error_code& e) {
-		        std::cout << "Echo failed because: " << e
-		                  << "(" << e.message() << ")" << std::endl;
-		    }
+			fila_msg.push(estado);
 
 			tempo += 0.1;
 			usleep(100000);
@@ -160,6 +200,7 @@ void *controle_t (void *param) {
 
 void conectar(stringstream *ss){
 	*ss >> ipeu >> porta;
+	printf("ConexaoParam: %s %d\n", ipeu, porta);
 	q = new Quanser(ipeu, porta);
 }
 void desconectar(){
@@ -175,50 +216,18 @@ void controle(stringstream *ss){
 
 void set_onda(stringstream *ss){
 	int tipo_onda;
-	*ss >> tipo_onda;
-	switch (tipo_onda) {
-		case DEGRAU:
-			set_onda_degrau(ss);
-		break;
-		case SENOIDAL:
-			set_onda_senoidal(ss);
-		break;
-		case QUADRADA:
-			set_onda_quadrada(ss);
-		break;
-		case SERRA:
-			set_onda_dente_serra(ss);
-		break;
-		case ALEATORIO:
-			set_onda_aleatoria(ss);
-		break;
-	}
-}
-
-void set_onda_degrau(stringstream *ss){
 	double amp;
-	*ss >> amp;
-	onda = new Tsunami(SERRA, amp, 0, 0, 0, 0, 0, 0);
-}
-void set_onda_senoidal(stringstream *ss){
-	double amp, periodo, offset;
-	*ss >> amp >> periodo >> offset;
-	onda = new Tsunami(SENOIDAL, amp, 0, 0, periodo, 0, 0, offset);
-}
-void set_onda_quadrada(stringstream *ss){
-	double amp, periodo, offset;
-	*ss >> amp >> periodo >> offset;
-	onda = new Tsunami(QUADRADA, amp, 0, 0, periodo, 0, 0, offset);
-}
-void set_onda_dente_serra(stringstream *ss){
-	double amp, periodo, offset;
-	*ss >> amp >> periodo >> offset;
-	onda = new Tsunami(SERRA, amp, 0, 0, periodo, 0, 0, offset);
-}
-void set_onda_aleatoria(stringstream *ss){
-	double amp_sup, amp_inf, periodo_sup, periodo_inf;
-	*ss >> amp_sup >> amp_inf >> periodo_sup >> periodo_inf;
-	onda = new Tsunami(ALEATORIO, 0, amp_sup, amp_inf, 0, periodo_sup, periodo_inf, 0);
+	double amp_sup;
+	double amp_inf;
+	double periodo;
+	double periodo_sup;
+	double periodo_inf;
+	double offset;
+	*ss >> tipo_onda >> amp >> amp_sup >> amp_inf
+		>> periodo >> periodo_sup >> periodo_inf >> offset;
+	onda = new Tsunami(tipo_onda, amp, amp_sup, amp_inf,
+						periodo, periodo_sup, periodo_inf, offset);
+
 }
 
 void set_controle(stringstream *ss){
@@ -254,8 +263,9 @@ void set_malha_fechada(stringstream *ss){
 void set_pid(stringstream *ss){
 	bool pi_d;
 	double kp, ki, kd;
-	*ss >> kp >> ki >> kd >> pi_d;
-	controlador = new Controle_PID(kp, ki, kd, pi_d);
+	short int filtro;
+	*ss >> kp >> ki >> kd >> pi_d >> filtro;
+	controlador = new Controle_PID(kp, ki, kd, pi_d, filtro);
 }
 void set_pidpid(stringstream *ss){
 	controlador = new Controle();
@@ -264,5 +274,49 @@ void set_oe(stringstream *ss){
 	controlador = new Controle();
 }
 void set_sr(stringstream *ss){
+	controlador = new Controle();
+}
+
+void controle_att(stringstream *ss){
+	int tipo_controle;
+	*ss >> tipo_controle;
+	switch (tipo_controle) {
+		break;
+		case PID:
+			att_pid(ss);
+		break;
+		case PIDPID:
+			att_pidpid(ss);
+		break;
+		case OE:
+			att_oe(ss);
+		break;
+		case SR:
+			att_sr(ss);
+		break;
+	}
+}
+
+void att_pid(stringstream *ss){
+	bool pi_d;
+	double kp, ki, kd;
+	short int filtro;
+	*ss >> kp >> ki >> kd >> pi_d >> filtro;
+	double param [5];
+	param[0] = kp;
+	param[1] = ki;
+	param[2] = kd;
+	param[3] = pi_d;
+	param[4] = filtro;
+	printf("Carregou todos os dados\n");
+	controlador->att(param);
+}
+void att_pidpid(stringstream *ss){
+	controlador = new Controle();
+}
+void att_oe(stringstream *ss){
+	controlador = new Controle();
+}
+void att_sr(stringstream *ss){
 	controlador = new Controle();
 }

@@ -9,16 +9,24 @@
 #define CONTROLE 11
 #define CONTROLE_SATURADO 12
 
+#define SEM__FILTRO 0
+#define BACK_FILTRO 1
+#define COND_FILTRO 2
+
 class Controle_PID : public Malha_Fechada {
 public:
-    Controle_PID(double kp, double ki, double kd, bool pi_d);
+    Controle_PID(double kp, double ki, double kd, bool pi_d, short int filtro);
     virtual ~Controle_PID();
     double acao();
     char* reporte(double tempo);
 
+    void att(double param[]);
     double acaoP();
     double acaoI();
     double acaoD();
+
+    void back();
+
 private:
     // Flag para determinar se é PID ou PI-D
     bool pi_d;
@@ -31,9 +39,13 @@ private:
     double *ki;
     double *kd;
 
+    double *talt;
+
     double *acao_prop;
     double *acao_int;
     double *acao_der;
+
+    short int filtro;
 };
 
 #endif
