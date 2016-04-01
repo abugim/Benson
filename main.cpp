@@ -8,6 +8,8 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 
+#include <math.h>
+
 #include <queue>
 
 #include <sstream>
@@ -152,8 +154,8 @@ void on_message(server* s, websocketpp::connection_hdl hdl, message_ptr msg) {
 		ss >> leitura_um >> leitura_dois >> escrita;
 		if (controle !=  NULL) {
 			controle_att(&ss);
+			esperando = false;
 		}
-		esperando = false;
 		break;
 
 		case DATA:
@@ -167,6 +169,7 @@ void on_message(server* s, websocketpp::connection_hdl hdl, message_ptr msg) {
 			s->send(hdl, estados, websocketpp::frame::opcode::text);
 		break;
 	}
+	printf("Recebimento realizado com sucesso\n");
 }
 
 void *controle_t (void *param) {
@@ -179,12 +182,11 @@ void *controle_t (void *param) {
 		if (!esperando)
 		{
 			// Colocar mutex
-
-			controlador->set_nivel_um(q->readAD(leitura_um));
-			controlador->set_nivel_dois(q->readAD(leitura_dois));
+			// controlador->set_nivel_um(q->readAD(leitura_um));
+			// controlador->set_nivel_dois(q->readAD(leitura_dois));
 
 			// Calculo do controle
-			q->writeDA(escrita, controlador->acao());
+			// q->writeDA(escrita, controlador->acao());
 			controlador->acao();
 			//printf("Controlador\n");
 
@@ -201,11 +203,11 @@ void *controle_t (void *param) {
 void conectar(stringstream *ss){
 	*ss >> ipeu >> porta;
 	printf("ConexaoParam: %s %d\n", ipeu, porta);
-	q = new Quanser(ipeu, porta);
+	// q = new Quanser(ipeu, porta);
 }
 void desconectar(){
 	esperando = true;
-	delete q;
+	// delete q;
 }
 
 void controle(stringstream *ss){
@@ -261,11 +263,11 @@ void set_malha_fechada(stringstream *ss){
 	controlador = new Malha_Fechada();
 }
 void set_pid(stringstream *ss){
-	bool pi_d;
-	double kp, ki, kd;
+	bool pi_d, unidade_sobressinal, flag_var_controle;
+	double kp, ki, kd, fator_subida, fator_acomodacao;
 	short int filtro;
-	*ss >> kp >> ki >> kd >> pi_d >> filtro;
-	controlador = new Controle_PID(kp, ki, kd, pi_d, filtro);
+	*ss >> fator_subida >> fator_acomodacao >> unidade_sobressinal >> flag_var_controle >> kp >> ki >> kd >> pi_d >> filtro;
+	controlador = new Controle_PID(kp, ki, kd, pi_d, filtro, fator_subida, fator_acomodacao, unidade_sobressinal, flag_var_controle);
 }
 void set_pidpid(stringstream *ss){
 	controlador = new Controle();
@@ -278,10 +280,11 @@ void set_sr(stringstream *ss){
 }
 
 void controle_att(stringstream *ss){
+	set_onda(ss);
+	controlador->set_onda(onda);
 	int tipo_controle;
 	*ss >> tipo_controle;
 	switch (tipo_controle) {
-		break;
 		case PID:
 			att_pid(ss);
 		break;
