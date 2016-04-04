@@ -16,6 +16,7 @@ public:
 protected:
     double *referencia;
     double *erro;
+    bool flag_var_controle;
 };
 
 #endif
