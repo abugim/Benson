@@ -1,6 +1,6 @@
 #include "pid.h"
 
-Controle_PID::Controle_PID(double kp, double ki, double kd, bool pi_d, short int filtro, float fator_subida, float fator_acomodacao, bool unidade_sobressinal, bool flag_var_controle) {
+Controle_PID::Controle_PID(double kp, double ki, double kd, bool pi_d, short int filtro, double talt, float fator_subida, float fator_acomodacao, bool unidade_sobressinal, bool flag_var_controle) {
     this->integrador = new double;
     *(this->integrador) = 0;
 
@@ -20,12 +20,13 @@ Controle_PID::Controle_PID(double kp, double ki, double kd, bool pi_d, short int
     this->kd = new double;
     *(this->kd) = kd;
 
-    this->talt = new double;
-    *(this->talt) = sqrt(*(this->kd)/(*(this->ki)));
-
     this->pi_d = pi_d;
 
     this->filtro = filtro;
+
+    this->flag_saturado = false;
+    this->talt = new double;
+    *(this->talt) = talt;
 
     this->acao_prop = new double;
     *(this->acao_prop) = 0;
@@ -82,16 +83,12 @@ Controle_PID::~Controle_PID() {
 }
 
 void Controle_PID::att(double param[]) {
-    printf("kp\n");
     *(this->kp) = param[0];
-    printf("ki\n");
     *(this->ki) = param[1];
-    printf("kd\n");
     *(this->kd) = param[2];
-    printf("pi-d\n");
     this->pi_d = param[3];
-    printf("filtro\n");
     this->filtro = param[4];
+    *this->talt = param[6];
 
     *(this->talt) = sqrt(*(this->kd)/(*(this->ki)));
 }
@@ -115,6 +112,7 @@ double Controle_PID::acao() {
     *erro = *referencia - *var_controle;
     *controle = acaoP() + acaoI() + acaoD();
     trava_seguranca();
+    flag_saturado = *controle != *controle_saturado;
     return *controle_saturado;
 }
 
@@ -130,8 +128,8 @@ char* Controle_PID::reporte(double tempo) {
                 flag_pico, *tempo_pico, flag_pico, *sobre_sinal,
                 flag_subida, *tempo_subida, flag_acomodacao, *tempo_acomodacao);
 
-    *nivel_um = (*referencia - ((*referencia - *referencia_passada) * (exp(-(tempo - *tempo_variacao_referencia)/2) * cos((tempo - *tempo_variacao_referencia)))));
-    *nivel_dois = (*referencia - ((*referencia - *referencia_passada) * (exp(-(tempo - *tempo_variacao_referencia)*2) * cos((tempo - *tempo_variacao_referencia)))));
+    // *nivel_um = (*referencia - ((*referencia - *referencia_passada) * (exp(-(tempo - *tempo_variacao_referencia)/2) * cos((tempo - *tempo_variacao_referencia)))));
+    // *nivel_dois = (*referencia - ((*referencia - *referencia_passada) * (exp(-(tempo - *tempo_variacao_referencia)*2) * cos((tempo - *tempo_variacao_referencia)))));
     return mensagem;
 }
 
@@ -142,12 +140,8 @@ double Controle_PID::acaoP() {
 
 double Controle_PID::acaoI() {
     if (this->filtro == COND_FILTRO){
-        if (((*(this->controle_saturado) == 4) &&  (*(this->erro) > 0))
-            || ((*(this->controle_saturado) == -4) &&  (*(this->erro) < 0))){
-            return *(this->integrador);
-        } else {
-            *(this->integrador) += *(this->ki) * 0.1 * (*(this->erro));
-            return *(this->integrador);
+        if (!flag_saturado) {
+            *this->integrador += *this->ki * 0.1 * (*this->erro);
         }
     } else if (this->filtro == BACK_FILTRO) {
         *(this->integrador) += 0.1 * (*(this->ki) * (*(this->erro)) +

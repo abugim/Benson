@@ -15,7 +15,7 @@
 
 class Controle_PID : public Malha_Fechada {
 public:
-    Controle_PID(double kp, double ki, double kd, bool pi_d, short int filtro, float fator_subida, float fator_acomodacao, bool unidadeSobressinal, bool var_controle);
+    Controle_PID(double kp, double ki, double kd, bool pi_d, short int filtro, double talt, float fator_subida, float fator_acomodacao, bool unidadeSobressinal, bool var_controle);
     virtual ~Controle_PID();
     double acao();
     char* reporte(double tempo);
@@ -43,6 +43,7 @@ private:
     double *ki;
     double *kd;
 
+    bool flag_saturado;
     double *talt;
 
     double *acao_prop;
