@@ -3,19 +3,17 @@
 #include "classes/tsunami.h"
 #include "classes/controle.h"
 #include "classes/malha_fechada.h"
+#include "classes/controle_pid.h"
+#include "classes/controle_cachoeira.h"
 #include "classes/pid.h"
 #include "classes/quanser.h"
 #include <arpa/inet.h>
 #include <stdlib.h>
 
 #include <math.h>
-
 #include <queue>
-
 #include <sstream>
-
 #include <string>
-
 #include <unistd.h>
 
 // WebSocket
@@ -55,6 +53,7 @@ server *serv = new server();
 
 void* controle_t(void *param);
 void on_message(server* s, websocketpp::connection_hdl hdl, message_ptr msg);
+void on_close(websocketpp::connection_hdl hdl);
 
 void conectar(stringstream *ss);
 void desconectar();
@@ -78,6 +77,8 @@ void set_sr(stringstream *ss);
 
 void controle_att(stringstream *ss);
 
+void esvaziar_fila_msg();
+
 void att_pid(stringstream *ss);
 void att_pidpid(stringstream *ss);
 void att_oe(stringstream *ss);
@@ -94,12 +95,13 @@ int main (int argc, char const *argv[]) {
 	// Fim inicialização da thread de controle
     try {
         // Set logging settings
-        serv->set_access_channels(websocketpp::log::alevel::all);
-        serv->clear_access_channels(websocketpp::log::alevel::frame_payload);
+        // serv->set_access_channels(websocketpp::log::alevel::all);
+        // serv->clear_access_channels(websocketpp::log::alevel::frame_payload);
         // Initialize Asio
         serv->init_asio();
         // Register our message handler
-        serv->set_message_handler(bind(&on_message,serv,::_1,::_2));
+		serv->set_close_handler(&on_close);
+        serv->set_message_handler(bind(&on_message, serv, ::_1, ::_2));
         // Listen on port 9002
         serv->listen(9002);
         // Start the serv accept loop
@@ -141,21 +143,20 @@ void on_message(server* s, websocketpp::connection_hdl hdl, message_ptr msg) {
 		case CTRL_CONF:
 			esperando = true;
 			tempo = 0;
-			while(!fila_msg.empty())
-				fila_msg.pop();
+			esvaziar_fila_msg();
 			ss >> leitura_um >> leitura_dois >> escrita;
 			controle(&ss);
 			esperando = false;
 		break;
 
 		case ATT_CTRL:
-		//string estados;
-		esperando = true;
-		ss >> leitura_um >> leitura_dois >> escrita;
-		if (controle !=  NULL) {
-			controle_att(&ss);
-			esperando = false;
-		}
+			//string estados;
+			esperando = true;
+			ss >> leitura_um >> leitura_dois >> escrita;
+			if (controle !=  NULL) {
+				controlador->att(&ss);
+				esperando = false;
+			}
 		break;
 
 		case DATA:
@@ -169,40 +170,33 @@ void on_message(server* s, websocketpp::connection_hdl hdl, message_ptr msg) {
 			s->send(hdl, estados, websocketpp::frame::opcode::text);
 		break;
 	}
-	printf("Recebimento realizado com sucesso\n");
 }
 
-void *controle_t (void *param) {
-	message_ptr msg;
+void on_close (websocketpp::connection_hdl hdl) {
+	desconectar();
+}
 
+
+void *controle_t (void *param) {
 	char* estado;
-	printf("Controle inciado\n");
-	while(true)
-	{
-		if (!esperando)
-		{
+	while (true) {
+		if (!esperando) {
 			// Colocar mutex
 			controlador->set_nivel_um(q->readAD(leitura_um));
 			controlador->set_nivel_dois(q->readAD(leitura_dois));
-
 			// Calculo do controle
 			q->writeDA(escrita, controlador->acao());
-			// controlador->acao();
-			//printf("Controlador\n");
-
 			/* Write a response to the client */
 			estado = controlador->reporte(tempo);
 			fila_msg.push(estado);
-
 			tempo += 0.1;
 			usleep(100000);
 		}
 	}
 }
 
-void conectar(stringstream *ss){
+void conectar(stringstream *ss) {
 	*ss >> ipeu >> porta;
-	printf("ConexaoParam: %s %d\n", ipeu, porta);
 	q = new Quanser(ipeu, porta);
 }
 void desconectar(){
@@ -210,117 +204,51 @@ void desconectar(){
 	delete q;
 }
 
-void controle(stringstream *ss){
+void controle(stringstream *ss) {
 	set_onda(ss);
 	set_controle(ss);
 	controlador->set_onda(onda);
 }
 
-void set_onda(stringstream *ss){
-	int tipo_onda;
-	double amp;
-	double amp_sup;
-	double amp_inf;
-	double periodo;
-	double periodo_sup;
-	double periodo_inf;
-	double offset;
-	*ss >> tipo_onda >> amp >> amp_sup >> amp_inf
-		>> periodo >> periodo_sup >> periodo_inf >> offset;
-	onda = new Tsunami(tipo_onda, amp, amp_sup, amp_inf,
-						periodo, periodo_sup, periodo_inf, offset);
-
+void set_onda(stringstream *ss) {
+	onda = new Tsunami(ss);
 }
 
-void set_controle(stringstream *ss){
+void set_controle(stringstream *ss) {
 	int tipo_controle;
 	*ss >> tipo_controle;
+	bool var;
 	switch (tipo_controle) {
-		case MA:
-			set_malha_aberta(ss);
+		case CTRL_MA:
+			controlador = new Controle();
 		break;
-		case MF:
-			set_malha_fechada(ss);
+		case CTRL_MF:
+			*ss >> var;
+			controlador = new Malha_Fechada(new Param_Desempenho(ss), var);
 		break;
-		case PID:
-			set_pid(ss);
+		case CTRL_PID:
+			bool var;
+			*ss >> var;
+			controlador = new Controle_PID(new PID(ss), new Param_Desempenho(ss), var);
 		break;
-		case PIDPID:
-			set_pidpid(ss);
+		case CTRL_CACHOEIRA:
+			controlador = new ControleCachoeira(new PID(ss), new PID(ss), new Param_Desempenho(ss));
 		break;
-		case OE:
-			set_oe(ss);
+		case CTRL_OE:
+			controlador = new Controle();
 		break;
-		case SR:
-			set_sr(ss);
+		case CTRL_SR:
+			controlador = new Controle();
 		break;
 	}
 }
-void set_malha_aberta(stringstream *ss){
-	controlador = new Controle();
-}
-void set_malha_fechada(stringstream *ss){
-	controlador = new Malha_Fechada();
-}
-void set_pid(stringstream *ss){
-	bool pi_d, unidade_sobressinal, flag_var_controle;
-	double kp, ki, kd, fator_subida, fator_acomodacao, talt;
-	short int filtro;
-	*ss >> fator_subida >> fator_acomodacao >> unidade_sobressinal >> flag_var_controle >> kp >> ki >> kd >> pi_d >> filtro >> talt;
-	controlador = new Controle_PID(kp, ki, kd, pi_d, filtro, talt, fator_subida, fator_acomodacao, unidade_sobressinal, flag_var_controle);
-}
-void set_pidpid(stringstream *ss){
-	controlador = new Controle();
-}
-void set_oe(stringstream *ss){
-	controlador = new Controle();
-}
-void set_sr(stringstream *ss){
-	controlador = new Controle();
-}
 
-void controle_att(stringstream *ss){
+void controle_att(stringstream *ss) {
 	set_onda(ss);
-	controlador->set_onda(onda);
-	int tipo_controle;
-	*ss >> tipo_controle;
-	switch (tipo_controle) {
-		case PID:
-			att_pid(ss);
-		break;
-		case PIDPID:
-			att_pidpid(ss);
-		break;
-		case OE:
-			att_oe(ss);
-		break;
-		case SR:
-			att_sr(ss);
-		break;
-	}
+	controlador->att(ss);
 }
 
-void att_pid(stringstream *ss){
-	bool pi_d;
-	double kp, ki, kd, talt;
-	short int filtro;
-	*ss >> kp >> ki >> kd >> pi_d >> filtro >> talt;
-	double param [6];
-	param[0] = kp;
-	param[1] = ki;
-	param[2] = kd;
-	param[3] = pi_d;
-	param[4] = filtro;
-	param[5] = talt;
-	printf("Carregou todos os dados\n");
-	controlador->att(param);
-}
-void att_pidpid(stringstream *ss){
-	controlador = new Controle();
-}
-void att_oe(stringstream *ss){
-	controlador = new Controle();
-}
-void att_sr(stringstream *ss){
-	controlador = new Controle();
+void esvaziar_fila_msg() {
+	while(!fila_msg.empty())
+		fila_msg.pop();
 }

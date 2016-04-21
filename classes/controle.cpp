@@ -6,20 +6,27 @@ Controle::Controle(){
 
     this->controle = new double;
     this->controle_saturado = new double;
-    this->mensagem =  (char*) malloc(2048 * sizeof(char));
+    // this->mensagem =  (char*) malloc(2048 * sizeof(char));
 }
 
 Controle::~Controle(){
     delete onda;
+    delete nivel_um;
+    delete nivel_dois;
+    delete controle;
+    delete controle_saturado;
+    delete mensagem;
     delete this;
 }
 
-void Controle::att(double param[]){}
+void Controle::att(stringstream *ss){
+    onda->att(ss);
+}
 
 double Controle::acao(){
-    *(this->controle) = this->onda->proximo_ponto();
+    *this->controle = this->onda->proximo_ponto();
     trava_seguranca();
-    return *(this->controle_saturado);
+    return *this->controle_saturado;
 };
 
 char* Controle::reporte(double tempo){

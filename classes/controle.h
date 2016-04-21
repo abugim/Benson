@@ -3,6 +3,8 @@
 
 #include "tsunami.h"
 #include "quanser.h"
+#include "math.h"
+#include <sstream>
 
 #define TEMPO 0
 #define NIVEL_UM 1
@@ -10,12 +12,14 @@
 #define T_ONDA 3
 #define T_SAT 4
 
-#define MA 0
-#define MF 1
-#define PID 2
-#define PIDPID 3
-#define OE 4
-#define SR 5
+#define CTRL_MA 0
+#define CTRL_MF 1
+#define CTRL_PID 2
+#define CTRL_CACHOEIRA 3
+#define CTRL_OE 4
+#define CTRL_SR 5
+
+#define ERRO_RAND 0.04
 
 #define CONSTANTE_SENSOR 6.25
 
@@ -27,7 +31,7 @@ public:
 
 	virtual double acao();
 	virtual char* reporte(double tempo);
-	virtual void att(double param[]);
+	virtual void att(stringstream *ss);
 
 	void set_onda(Tsunami* onda);
 

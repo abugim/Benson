@@ -13,6 +13,12 @@ Tsunami::Tsunami(){
     this->offset = 0;
 }
 
+Tsunami::Tsunami(stringstream *ss) {
+    tempo = 0;
+    *ss >> tipo >> amp >> amp_sup >> amp_inf
+		>> periodo >> periodo_sup >> periodo_inf >> offset;
+}
+
 Tsunami::Tsunami(int tipo, double amp, double amp_sup, double amp_inf, double periodo, double periodo_sup, double periodo_inf, double offset){
     this->tempo = 0;
     this->tipo = tipo;
@@ -27,6 +33,11 @@ Tsunami::Tsunami(int tipo, double amp, double amp_sup, double amp_inf, double pe
 
 Tsunami::~Tsunami(){
     delete this;
+}
+
+void Tsunami::att(stringstream *ss) {
+    *ss >> tipo >> amp >> amp_sup >> amp_inf
+		>> periodo >> periodo_sup >> periodo_inf >> offset;
 }
 
 double Tsunami::proximo_ponto() {

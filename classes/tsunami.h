@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+#include <string>
+#include <sstream>
+
+using namespace std;
 
 #define DEGRAU 0
 #define SENOIDAL 1
@@ -15,8 +19,11 @@ class Tsunami
 {
 public:
 	Tsunami();
+	Tsunami(stringstream *ss);
 	Tsunami(int tipo, double amp, double amp_sup, double amp_inf, double periodo, double periodo_sup, double periodo_inf, double offset);
 	virtual ~Tsunami();
+
+	void att(stringstream *ss);
 
 	double proximo_ponto();
 
@@ -62,6 +69,7 @@ private:
 	double periodo_inf;
 
 	double offset;
+
 };
 
 #endif
