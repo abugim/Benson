@@ -21,7 +21,7 @@ public:
 
     void acao(bool saturacao);
 
-    void set_var(double *var);
+    void set_var(double *var, double *var_ant);
     void set_var_der(double *var_der, double *var_der_ant);
     void att(stringstream *ss);
 
@@ -40,6 +40,7 @@ public:
     double *acao_der;
 
     double *var;
+    double *var_ant;
     double *var_der;
     double *var_der_ant;
 };

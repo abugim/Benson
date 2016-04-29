@@ -17,7 +17,7 @@ ControleCachoeira::ControleCachoeira(PID *mestre, PID *escravo, Param_Desempenho
     controle_mestre = new double;
     *controle_mestre = 0;
 
-    mestre->set_var(erro);
+    mestre->set_var(var_controle, var_controle_anterior);
     if (mestre->pi_d) {
         mestre->set_var_der(erro, erro_anterior);
     } else {
@@ -25,7 +25,7 @@ ControleCachoeira::ControleCachoeira(PID *mestre, PID *escravo, Param_Desempenho
     }
     this->mestre = mestre;
 
-    escravo->set_var(erro_escravo);
+    escravo->set_var(nivel_um, nivel_um_anterior);
     if (escravo->pi_d) {
         escravo->set_var_der(erro_escravo, erro_escravo_anterior);
     } else {

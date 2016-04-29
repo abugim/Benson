@@ -229,7 +229,7 @@ void set_controle(stringstream *ss) {
 		case CTRL_PID:
 			bool var;
 			*ss >> var;
-			controlador = new Controle_PID(new PID(ss), new Param_Desempenho(ss), var);
+			controlador = new Controle_PID(new Param_Desempenho(ss), new PID(ss), var);
 		break;
 		case CTRL_CACHOEIRA:
 			controlador = new ControleCachoeira(new PID(ss), new PID(ss), new Param_Desempenho(ss));

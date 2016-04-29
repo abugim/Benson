@@ -1,7 +1,8 @@
 #include "malha_fechada.h"
 
 Malha_Fechada::Malha_Fechada (Param_Desempenho *param_desempenho, bool flag_var) {
-    this->var_controle = flag_var ? nivel_um : nivel_dois;
+    this->var_controle = !flag_var ? nivel_um : nivel_dois;
+    // this->var_controle = nivel_um;
 
     this->var_controle_anterior = new double;
     *this->var_controle_anterior = 0;
@@ -15,6 +16,25 @@ Malha_Fechada::Malha_Fechada (Param_Desempenho *param_desempenho, bool flag_var)
     this->erro = new double;
     *this->erro = 0;
     this->param_desempenho = param_desempenho;
+
+    this->tempo_variacao_referencia = new double;
+    *this->tempo_variacao_referencia = 0;
+
+    this->tempo_acomodacao = new double;
+    *this->tempo_acomodacao = 0;
+
+    this->tempo_subida = new double;
+    *this->tempo_subida = 0;
+    this->tempo_subida_inicio = new double;
+    *this->tempo_subida_inicio = 0;
+    this->tempo_subida_final = new double;
+    *this->tempo_subida_final = 0;
+    this->tempo_pico = new double;
+    *this->tempo_pico = 0;
+    this->sobre_sinal = new double;
+    *this->sobre_sinal = 0;
+    this->erro_regime = new double;
+    *this->erro_regime = 0;
 }
 
 Malha_Fechada::~Malha_Fechada(){

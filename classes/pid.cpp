@@ -56,18 +56,19 @@ PID::~PID() {
 }
 
 void PID::att(stringstream *ss) {
-	*ss >> *kp >> *ki >> *kd >> *talt >> pi_d >> filtro_integrativo;
+	*ss >> *kp >> *ki >> *kd >> pi_d >> filtro_integrativo >> *talt;
 }
 
 void PID::acao(bool saturacao) {
     *acao_prop = *kp * (*var);
     if (!saturacao)
         *acao_int += *ki * 0.1 * (*var);
-    *acao_der = (*kd * (*var_der) - *(var_der_ant))/0.1;
+    *acao_der = (*kd * ((*var_der) - *(var_der_ant)))/0.1;
 }
 
-void PID::set_var(double *var){
+void PID::set_var(double *var, double *var_ant){
     this->var = var;
+    this->var_ant = var_ant;
 }
 void PID::set_var_der(double *var_der, double *var_der_ant){
     this->var_der = var_der;

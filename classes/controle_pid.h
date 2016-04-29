@@ -8,7 +8,7 @@ class Controle_PID : public Malha_Fechada {
 private:
     /* data */
 public:
-    Controle_PID (PID *pid, Param_Desempenho *param_desempenho, bool var);
+    Controle_PID (Param_Desempenho *param_desempenho, PID *pid, bool var);
     virtual ~Controle_PID ();
 
     void att(stringstream *ss);
@@ -19,6 +19,7 @@ public:
 
 protected:
     PID *pid;
+    double *erro_anterior;
 };
 
 #endif
