@@ -1,42 +1,39 @@
 #include "controle_cachoeira.h"
 
-ControleCachoeira::ControleCachoeira(PID *mestre, PID *escravo, Param_Desempenho *param_desempenho)
+ControleCachoeira::ControleCachoeira(Param_Desempenho *param_desempenho, PID *mestre, PID *escravo)
     : Malha_Fechada(param_desempenho, true) {
 
     nivel_um_anterior = new double;
     *nivel_um_anterior = 0;
     nivel_dois_anterior = new double;
     *nivel_dois_anterior = 0;
-    erro_anterior = new double;
+    erro_anterior = new double(0);
     *erro_anterior = 0;
 
-    erro_escravo = new double;
-    *erro_escravo = 0;
-    erro_escravo_anterior = new double;
-    *erro_escravo_anterior = 0;
-    controle_mestre = new double;
-    *controle_mestre = 0;
+    erro_escravo = new double(0);
+    erro_escravo_anterior = new double(0);
+    controle_mestre = new double(0);
 
-    mestre->set_var(var_controle, var_controle_anterior);
-    if (mestre->pi_d) {
-        mestre->set_var_der(erro, erro_anterior);
-    } else {
-        mestre->set_var_der(nivel_dois, nivel_dois_anterior);
-    }
+    var_controle = nivel_dois;
+    var_controle_anterior = nivel_dois_anterior;
+
     this->mestre = mestre;
-
-    escravo->set_var(nivel_um, nivel_um_anterior);
-    if (escravo->pi_d) {
-        escravo->set_var_der(erro_escravo, erro_escravo_anterior);
-    } else {
-        escravo->set_var_der(nivel_um, nivel_um_anterior);
-    }
     this->escravo = escravo;
 
-    erro_escravo = new double;
-    erro_escravo = 0;
-    controle_mestre = new double;
-    controle_mestre = 0;
+    mestre->set_var(erro, erro_anterior);
+    if (mestre->pi_d) {
+        mestre->set_var_der(nivel_dois, nivel_dois_anterior);
+    } else {
+        mestre->set_var_der(erro, erro_anterior);
+    }
+
+    escravo->set_var(erro_escravo, erro_escravo_anterior);
+    if (escravo->pi_d) {
+        escravo->set_var_der(nivel_um, nivel_um_anterior);
+    } else {
+        escravo->set_var_der(erro_escravo, erro_escravo_anterior);
+    }
+
 }
 
 ControleCachoeira::~ControleCachoeira() {
@@ -67,6 +64,12 @@ double ControleCachoeira::acao() {
 
 char* ControleCachoeira::reporte(double tempo) {
     this->mensagem =  (char*) malloc(2048 * sizeof(char));
+
+    *erro_anterior = *erro;
+    *erro_escravo_anterior = *erro_escravo;
+    *nivel_um_anterior = *nivel_um;
+    *nivel_dois_anterior = *nivel_dois;
+
     sprintf(mensagem, "%lf|%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf|%lf,%lf,%lf|%d,%lf,%d,%lf,%d,%lf,%d,%lf,%d,%lf",
                 tempo,*erro, *mestre->acao_prop, *mestre->acao_int, *mestre->acao_der, *controle_mestre,
                 *erro_escravo, *escravo->acao_prop, *escravo->acao_int, *escravo->acao_der, *controle,

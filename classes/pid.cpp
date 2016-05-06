@@ -42,7 +42,7 @@ PID::PID(stringstream *ss) {
     acao_der = new double;
     *acao_der = 0;
 
-    *ss >> *kp >> *ki >> *kd >> *talt >> pi_d >> filtro_integrativo;
+    *ss >> *kp >> *ki >> *kd >> pi_d >> filtro_integrativo >> *talt;
 }
 
 PID::~PID() {

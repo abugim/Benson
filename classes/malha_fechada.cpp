@@ -65,6 +65,7 @@ double Malha_Fechada::acao(){
 
 char* Malha_Fechada::reporte(double tempo){
     this->mensagem =  (char*) malloc(2048 * sizeof(char));
+    *var_controle_anterior = *var_controle;
     sprintf(mensagem, "%lf|%lf,%lf|%lf,%lf,%lf|%d,%lf,%d,%lf,%d,%lf,%d,%lf,%d,%lf",
                 tempo, *controle, *controle_saturado,
                  *nivel_um, *nivel_dois, *referencia,

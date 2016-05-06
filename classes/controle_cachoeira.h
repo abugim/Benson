@@ -19,7 +19,7 @@ private:
     double *erro_escravo_anterior;
     double *controle_mestre;
 public:
-    ControleCachoeira (PID *mestre, PID *escravo, Param_Desempenho *param);
+    ControleCachoeira (Param_Desempenho *param, PID *escravo, PID *mestre);
     virtual ~ControleCachoeira ();
 
     double acao();
