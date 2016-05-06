@@ -6,8 +6,9 @@
 #include "classes/controle_pid.h"
 #include "classes/controle_cachoeira.h"
 #include "classes/pid.h"
-#include "classes/quanser.h"
-#include <arpa/inet.h>
+// #include "classes/quanser.h"
+#include "classes/observador_estados.h"
+// #include <arpa/inet.h>
 #include <stdlib.h>
 
 #include <math.h>
@@ -218,24 +219,22 @@ void set_controle(stringstream *ss) {
 	int tipo_controle;
 	*ss >> tipo_controle;
 	bool var;
+	*ss >> var;
 	switch (tipo_controle) {
 		case CTRL_MA:
 			controlador = new Controle();
 		break;
 		case CTRL_MF:
-			*ss >> var;
 			controlador = new Malha_Fechada(new Param_Desempenho(ss), var);
 		break;
 		case CTRL_PID:
-			bool var;
-			*ss >> var;
 			controlador = new Controle_PID(new Param_Desempenho(ss), new PID(ss), var);
 		break;
 		case CTRL_CACHOEIRA:
-			controlador = new ControleCachoeira(new PID(ss), new PID(ss), new Param_Desempenho(ss));
+			controlador = new ControleCachoeira(new Param_Desempenho(ss), new PID(ss), new PID(ss));
 		break;
 		case CTRL_OE:
-			controlador = new Controle();
+			controlador = new ObservadorEstados(new Param_Desempenho(ss), var, ss);
 		break;
 		case CTRL_SR:
 			controlador = new Controle();
