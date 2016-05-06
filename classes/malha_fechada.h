@@ -26,6 +26,7 @@ protected:
     double *referencia_passada;
 
     double *erro;
+    double *erro_anterior;
 
     /* Analise de Desempenho */
     Param_Desempenho *param_desempenho;

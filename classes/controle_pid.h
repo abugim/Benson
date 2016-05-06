@@ -19,7 +19,7 @@ public:
 
 protected:
     PID *pid;
-    double *erro_anterior;
+    // double *erro_anterior;
 };
 
 #endif

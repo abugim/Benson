@@ -7,8 +7,8 @@ ControleCachoeira::ControleCachoeira(Param_Desempenho *param_desempenho, PID *me
     *nivel_um_anterior = 0;
     nivel_dois_anterior = new double;
     *nivel_dois_anterior = 0;
-    erro_anterior = new double(0);
-    *erro_anterior = 0;
+    // erro_anterior = new double(0);
+    // *erro_anterior = 0;
 
     erro_escravo = new double(0);
     erro_escravo_anterior = new double(0);

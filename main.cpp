@@ -3,12 +3,12 @@
 #include "classes/tsunami.h"
 #include "classes/controle.h"
 #include "classes/malha_fechada.h"
+#include "classes/pid.h"
 #include "classes/controle_pid.h"
 #include "classes/controle_cachoeira.h"
-#include "classes/pid.h"
-// #include "classes/quanser.h"
 #include "classes/observador_estados.h"
-// #include <arpa/inet.h>
+#include "classes/stalker.h"
+#include "classes/quanser.h"
 #include <stdlib.h>
 
 #include <math.h>
@@ -237,7 +237,7 @@ void set_controle(stringstream *ss) {
 			controlador = new ObservadorEstados(new Param_Desempenho(ss), var, ss);
 		break;
 		case CTRL_SR:
-			controlador = new Controle();
+			controlador = new Stalker(new Param_Desempenho(ss), var, ss);
 		break;
 	}
 }

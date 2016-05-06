@@ -2,8 +2,8 @@
 #define _CONTROLE_H
 
 #include "tsunami.h"
-#include "quanser.h"
 #include "math.h"
+#include <stdio.h>
 #include <sstream>
 
 #define TEMPO 0

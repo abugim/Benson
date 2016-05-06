@@ -15,6 +15,7 @@ Malha_Fechada::Malha_Fechada (Param_Desempenho *param_desempenho, bool flag_var)
 
     this->erro = new double;
     *this->erro = 0;
+    this->erro_anterior = new double(0);
     this->param_desempenho = param_desempenho;
 
     this->tempo_variacao_referencia = new double;
