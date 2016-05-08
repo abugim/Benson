@@ -11,9 +11,10 @@ Stalker::~Stalker(){
 }
 
 double Stalker::acao(){
+    *referencia = onda->proximo_ponto();
     *erro = *referencia - *nivel_dois;
-    *controle = (K[2] * (*erro - v_ant)) - (K[0] * *nivel_um) - (K[1] * *nivel_dois);
-    v_ant = *erro - v_ant;
+    *controle = (K[2] * (*erro + v_ant)) - ((K[0] * *nivel_um) + (K[1] * *nivel_dois));
+    v_ant = *erro + v_ant;
     trava_seguranca();
     return *controle_saturado;
 }
