@@ -3,12 +3,8 @@
 ControleCachoeira::ControleCachoeira(Param_Desempenho *param_desempenho, PID *mestre, PID *escravo)
     : Malha_Fechada(param_desempenho, true) {
 
-    nivel_um_anterior = new double;
-    *nivel_um_anterior = 0;
-    nivel_dois_anterior = new double;
-    *nivel_dois_anterior = 0;
-    // erro_anterior = new double(0);
-    // *erro_anterior = 0;
+    nivel_um_anterior = new double(0);
+    nivel_dois_anterior = new double(0);
 
     erro_escravo = new double(0);
     erro_escravo_anterior = new double(0);

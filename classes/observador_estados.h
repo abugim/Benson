@@ -13,6 +13,7 @@ public:
     void att(stringstream *ss);
 
 private:
+    double *nivel_dois_anterior;
     double G[2][2];
     double L[2];
     double H[2];

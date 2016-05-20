@@ -14,7 +14,6 @@ private:
     double *nivel_um_anterior;
     double *nivel_dois_anterior;
 
-    double *erro_anterior;
     double *erro_escravo;
     double *erro_escravo_anterior;
     double *controle_mestre;
