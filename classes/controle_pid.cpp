@@ -1,11 +1,11 @@
 #include "controle_pid.h"
 
 Controle_PID::Controle_PID (Param_Desempenho *param_desempenho, PID *pid, bool var) : Malha_Fechada(param_desempenho, var) {
-     this->pid = pid;
+    this->pid = pid;
     //  erro_anterior = new double(0);
-     pid->set_var(erro, erro_anterior);
-     if (pid->pi_d) pid->set_var_der(erro, erro_anterior);
-     else pid->set_var_der(var_controle, var_controle_anterior);
+    pid->set_var(erro, erro_anterior);
+    if (pid->pi_d) pid->set_var_der(erro, erro_anterior);
+    else pid->set_var_der(var_controle, var_controle_anterior);
 }
 Controle_PID::~Controle_PID () {
     delete pid;
